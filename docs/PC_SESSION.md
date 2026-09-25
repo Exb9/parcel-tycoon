@@ -7,15 +7,30 @@ Trail-Vorlage und die komplette UI. Die Bauanleitungen dafür sind
 
 ## 1. Einrichten
 
+Der Studio MCP ist in Studio eingebaut und läuft als lokaler Prozess per `stdio`, ohne Netzwerk-Port
+([Roblox-Doku](https://create.roblox.com/docs/studio/mcp)). Ihn erreicht nur eine Claude-Code-Session auf
+demselben PC. Eine Cloud-Session kommt nicht heran, auch wenn man sie in der Desktop-App öffnet, und es muss
+dafür auch kein Port freigegeben werden.
+
 1. Repo holen: `git pull` auf `main`, dann `rokit install` und `wally install`.
-2. Studio: Assistant → … → Manage MCP Servers → **Enable Studio as MCP server**, dann den Studio MCP in
-   Claude Code verbinden (`list_roblox_studios` kann direkt nach dem Verbinden kurz leer sein).
-3. Neuen Place anlegen (Baseplate) und als **`place/ParcelTycoon.rbxlx`** speichern.
-4. `rojo serve` starten und im Rojo-Plugin verbinden. Danach liegen Code und
+2. Studio: Assistant → … → Manage MCP Servers → **Enable Studio as MCP server**, darunter bei
+   **Quick connect** „Claude Code“ einschalten. Ohne Quick connect per Befehl:
+   `claude mcp add Roblox_Studio -- cmd.exe /c "%LOCALAPPDATA%\Roblox\mcp.bat"` (Windows) bzw.
+   `claude mcp add Roblox_Studio -- /Applications/RobloxStudio.app/Contents/MacOS/StudioMCP` (Mac).
+3. Session auf dem PC starten: im Repo-Ordner `claude remote-control` (erscheint dann in der Claude-App)
+   oder einfach `claude`. Ein grüner Punkt unter „Enable Studio as MCP server“ heißt verbunden.
+   Startprompt: „Arbeite docs/PC_SESSION.md ab.“
+4. Neuen Place anlegen (Baseplate) und als **`place/ParcelTycoon.rbxlx`** speichern.
+5. `rojo serve` starten und im Rojo-Plugin verbinden. Danach liegen Code und
    `LocalizationService.GameText` im Place.
-5. Für echtes Speichern (ProfileStore, Leaderboards): Place veröffentlichen (privat reicht) und unter
+6. Für echtes Speichern (ProfileStore, Leaderboards): Place veröffentlichen (privat reicht) und unter
    Game Settings → Security **Enable Studio Access to API Services** einschalten. Ohne das speichert
    ProfileStore nur zum Schein (Mock), das Spiel läuft trotzdem.
+
+Werkzeuge des Studio MCP: Jeder Aufruf braucht die `studio_id` aus `list_roblox_studios` (die Liste kann
+direkt nach dem Verbinden kurz leer sein). Gebaut wird mit `execute_luau` und `datamodel_type` Edit,
+nachgesehen mit `search_game_tree`, `inspect_instance` und `screen_capture`, getestet mit `start_stop_play`,
+`get_console_output` und `execute_luau` mit `datamodel_type` Server (Debug-Hook).
 
 ## 2. Map bauen ([`MAP_CONTRACT.md`](MAP_CONTRACT.md))
 

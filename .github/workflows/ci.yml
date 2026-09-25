@@ -23,15 +23,15 @@ jobs:
           if [ -d Packages ]; then wally-package-types --sourcemap sourcemap.json Packages/; fi
 
       - name: Format (StyLua)
-        run: stylua --check src tests
+        run: stylua --check src tests tools
 
       - name: Lint (Selene)
-        run: selene src tests
+        run: selene src tests tools
 
       - name: Typecheck (luau-lsp)
         run: |
           curl -sSLo globalTypes.d.luau https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/1.70.0/scripts/globalTypes.None.d.luau
-          luau-lsp analyze --platform=roblox --sourcemap=sourcemap.json --definitions=@roblox=globalTypes.d.luau --base-luaurc=.luaurc src
+          luau-lsp analyze --platform=roblox --sourcemap=sourcemap.json --definitions=@roblox=globalTypes.d.luau --base-luaurc=.luaurc --ignore "**/ServerPackages/**" --ignore "**/Packages/**" src
 
       - name: Tests and balancing (Lune)
         run: lune run tests

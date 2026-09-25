@@ -44,11 +44,28 @@ export type PlayerData = {
 	referrals: { day: number, rewardedToday: number, welcomed: boolean },
 	-- Recent developer product receipts, for idempotent ProcessReceipt handling.
 	purchaseIds: { string },
+	-- First-time tutorial (Config.Onboarding): current step, events counted in it, finished.
+	onboarding: { step: number, count: number, done: boolean },
+	-- Playtime gifts: seconds played on `day` (UTC day index) and how many gifts were opened.
+	playtime: { day: number, seconds: number, claimed: number },
+	-- Redeemed codes (normalized code -> true).
+	codes: { [string]: boolean },
+	group: { rewarded: boolean },
+	-- Rebirth milestones already rewarded (tostring(rebirths) -> true).
+	milestones: { [string]: boolean },
+	-- Rewarded video ads watched per placement on `day`.
+	ads: { day: number, counts: { [string]: number } },
+	-- One-time products already bought (starter pack).
+	oneTime: { [string]: boolean },
+	-- Auto Collect from the trial product, until this os.time().
+	autoCollectUntil: number,
+	-- Club subscription: UTC day of the last daily gift.
+	club: { lastGiftDay: number },
 }
 
 local DataSchema = {}
 
-DataSchema.VERSION = 1
+DataSchema.VERSION = 2
 
 function DataSchema.template(): PlayerData
 	return {
@@ -71,6 +88,15 @@ function DataSchema.template(): PlayerData
 		cosmetics = { owned = {}, equipped = {} },
 		referrals = { day = -1, rewardedToday = 0, welcomed = false },
 		purchaseIds = {},
+		onboarding = { step = 1, count = 0, done = false },
+		playtime = { day = -1, seconds = 0, claimed = 0 },
+		codes = {},
+		group = { rewarded = false },
+		milestones = {},
+		ads = { day = -1, counts = {} },
+		oneTime = {},
+		autoCollectUntil = 0,
+		club = { lastGiftDay = -1 },
 	}
 end
 
@@ -78,6 +104,15 @@ end
 local MIGRATIONS: { [number]: (data: any) -> () } = {
 	-- v0 -> v1: data written before versioning existed; the reconcile step fills everything in.
 	[1] = function(_data: any) end,
+	-- v1 -> v2: new features (tutorial, playtime gifts, codes, group, milestones, ads, club); players who
+	-- already sorted parcels skip the tutorial. The reconcile step adds the other fields.
+	[2] = function(data: any)
+		local stats = data.stats
+		local sorted = if type(stats) == "table" and type(stats.sortedTotal) == "number" then stats.sortedTotal else 0
+		if sorted > 0 and data.onboarding == nil then
+			data.onboarding = { step = 1, count = 0, done = true }
+		end
+	end,
 }
 
 -- Fills missing fields from the template without touching existing values (like ProfileStore's
@@ -117,6 +152,7 @@ function DataSchema.sanitize(data: PlayerData)
 	data.cash = math.max(0, finiteOr(data.cash, 0))
 	data.collector = math.max(0, finiteOr(data.collector, 0))
 	data.boostUntil = finiteOr(data.boostUntil, 0)
+	data.autoCollectUntil = finiteOr(data.autoCollectUntil, 0)
 	data.lastOnline = finiteOr(data.lastOnline, 0)
 	local progress = data.progress
 	progress.rebirths = math.max(0, math.floor(finiteOr(progress.rebirths, 0)))

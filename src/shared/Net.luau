@@ -16,9 +16,14 @@ Net.BuyPurchase = "BuyPurchase" -- (purchaseId: string)
 Net.Rebirth = "Rebirth" -- ()
 Net.ClaimQuest = "ClaimQuest" -- (questId: string)
 Net.ClaimDaily = "ClaimDaily" -- ()
-Net.Purchase = "Purchase" -- (kind: "pass" | "product", key: string)
+Net.Purchase = "Purchase" -- (kind: "pass" | "product" | "club", key: string)
 Net.Equip = "Equip" -- (slot: string, cosmeticId: string) ; "" = default look
 Net.RequestState = "RequestState" -- ()
+Net.WatchAd = "WatchAd" -- (placement: string) ; Config.Monetization.ads key
+Net.ClaimGift = "ClaimGift" -- () ; next playtime gift
+Net.RedeemCode = "RedeemCode" -- (code: string)
+Net.CheckGroup = "CheckGroup" -- () ; after the group join prompt
+Net.ClaimClubGift = "ClaimClubGift" -- ()
 
 -- Server -> client
 Net.State = "State" -- (patch: { [section]: any }, full: boolean)
@@ -29,7 +34,8 @@ export type Notice = {
 	-- (trackId, purchaseId, passKey, productKey, cosmeticId, typeId), the client turns them into names.
 	key: string,
 	args: { [string]: any }?,
-	-- "toast" (small), "big" (center), "silent" (sound only)
+	-- "toast" (small), "big" (center), "silent" (sound only), "welcome" (welcome-back window, args.amount),
+	-- "offer" (offer window, args.offerKind = "pass" | "product", args.offerKey)
 	style: string?,
 	-- Config.Sounds key.
 	sound: string?,
@@ -45,6 +51,11 @@ local NAMES = {
 	Net.Purchase,
 	Net.Equip,
 	Net.RequestState,
+	Net.WatchAd,
+	Net.ClaimGift,
+	Net.RedeemCode,
+	Net.CheckGroup,
+	Net.ClaimClubGift,
 	Net.State,
 	Net.Notify,
 }

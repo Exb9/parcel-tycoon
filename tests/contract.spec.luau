@@ -42,6 +42,12 @@ Test.test("every TextKey in the build specs exists in the localization table", f
 		info = true,
 		world = true,
 		board = true,
+		ads = true,
+		club = true,
+		group = true,
+		welcome = true,
+		offer = true,
+		codes = true,
 	}
 	for _, path in { "docs/UI_CONTRACT.md", "docs/MAP_CONTRACT.md" } do
 		local document = fs.readFile(path)
@@ -207,9 +213,17 @@ Test.test("package and cosmetic templates are checked", function()
 	Test.equal(#MapContract.validatePackageTemplate(package), 0)
 	Test.equal(#MapContract.validatePackageTemplate(Instance.new("Part")), 1)
 	local cosmetics = Instance.new("Folder")
-	Test.equal(#MapContract.validateCosmeticTemplates(cosmetics), 1)
-	local trail = Instance.new("Trail")
-	trail.Name = "trailRainbow"
-	trail.Parent = cosmetics
+	local trails = {}
+	for _, item in Config.Cosmetics.items do
+		if item.slot == "trail" then
+			table.insert(trails, item.id)
+		end
+	end
+	Test.equal(#MapContract.validateCosmeticTemplates(cosmetics), #trails)
+	for _, trailId in trails do
+		local trail = Instance.new("Trail")
+		trail.Name = trailId
+		trail.Parent = cosmetics
+	end
 	Test.equal(#MapContract.validateCosmeticTemplates(cosmetics), 0)
 end)

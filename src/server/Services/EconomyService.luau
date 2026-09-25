@@ -27,9 +27,19 @@ function EconomyService.boostActive(session: Session): boolean
 	return session.data.boostUntil > os.time()
 end
 
--- Multiplier on cash from sorting: passes and the active boost.
+-- Additive cash bonus from friends on the server, the group and the club subscription.
+function EconomyService.bonus(session: Session): number
+	return Economy.cashBonus(session.friendsOnServer, session.inGroup, session.clubMember)
+end
+
+-- Multiplier on cash from sorting: passes, the active boost and the bonus.
 function EconomyService.cashMultiplier(session: Session): number
-	return Economy.cashMultiplier(session.passes, EconomyService.boostActive(session))
+	return Economy.cashMultiplier(session.passes, EconomyService.boostActive(session), EconomyService.bonus(session))
+end
+
+-- Auto Collect from the pass (or the bundle) or from a running trial.
+function EconomyService.hasAutoCollect(session: Session): boolean
+	return session.passes.autoCollect == true or session.data.autoCollectUntil > os.time()
 end
 
 -- Income estimate per minute for progress-scaled rewards (typical manual play, passes, no boost).
@@ -83,13 +93,14 @@ function EconomyService.collectorCapacity(session: Session): number
 end
 
 function EconomyService.collectorFull(session: Session): boolean
-	return not session.passes.autoCollect and session.data.collector >= EconomyService.collectorCapacity(session)
+	return not EconomyService.hasAutoCollect(session)
+		and session.data.collector >= EconomyService.collectorCapacity(session)
 end
 
 -- Machine income goes into the cash register (or straight to the balance with Auto Collect).
 -- Returns false when the register is full; machines pause then.
 function EconomyService.depositMachine(session: Session, amount: number): boolean
-	if session.passes.autoCollect then
+	if EconomyService.hasAutoCollect(session) then
 		EconomyService.earn(session, amount, "machine")
 		return true
 	end
@@ -103,6 +114,9 @@ function EconomyService.depositMachine(session: Session, amount: number): boolea
 	data.stats.totalEarned += accepted
 	StateService.mark(session, "cash", "stats")
 	Events.cashEarned:Fire(session, accepted, "machine")
+	if data.collector >= capacity then
+		Events.collectorFull:Fire(session)
+	end
 	return true
 end
 
@@ -125,6 +139,19 @@ function EconomyService.addBoost(session: Session, minutes: number)
 	local data = session.data
 	data.boostUntil = math.max(os.time(), data.boostUntil) + math.floor(minutes * 60)
 	StateService.mark(session, "boost", "cash")
+end
+
+-- Auto Collect for a while (trial product and its video ad). Cash waiting in the register is paid now.
+function EconomyService.addAutoCollect(session: Session, minutes: number)
+	if minutes <= 0 then
+		return
+	end
+	local data = session.data
+	data.autoCollectUntil = math.max(os.time(), data.autoCollectUntil) + math.floor(minutes * 60)
+	StateService.mark(session, "boost", "cash")
+	if data.collector >= 1 then
+		EconomyService.collect(session)
+	end
 end
 
 export type GrantOptions = {
@@ -237,13 +264,15 @@ local function createLeaderstats(session: Session)
 	updateLeaderstats(session)
 end
 
--- Pays what the machines earned while the player was away. Returns the amount.
+-- Pays what the machines earned while the player was away and opens the welcome-back window, where the
+-- player can double it (video ad or product "doubleOffline"). Returns the amount.
 function EconomyService.payOfflineEarnings(session: Session, secondsAway: number): number
 	local data = session.data
 	local earned = Economy.offlineEarnings(data.progress, secondsAway, session.passes)
 	if earned > 0 then
 		EconomyService.earn(session, earned, "offline")
-		StateService.notify(session, "toast.offline", { amount = Format.cash(earned) }, "big", "reward")
+		session.pendingOffline = earned
+		StateService.notify(session, "toast.offline", { amount = Format.cash(earned) }, "welcome", "reward")
 	end
 	return earned
 end
@@ -266,6 +295,10 @@ function EconomyService.init()
 		if session and RateLimit.allow(player, "Rebirth", 0.5, 1) then
 			EconomyService.rebirth(session)
 		end
+	end)
+
+	Events.bonusChanged:Connect(function(session)
+		StateService.mark(session, "cash")
 	end)
 
 	Sessions.added:Connect(function(session)

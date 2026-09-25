@@ -33,4 +33,8 @@ return {
 	cosmeticsChanged = Signal.new() :: Signal<Session>,
 	-- The player's plot was (re)built and belts can start.
 	plotReady = Signal.new() :: Signal<Session>,
+	-- The cash register just became full (machines pause).
+	collectorFull = Signal.new() :: Signal<Session>,
+	-- Friends, group or club changed the cash bonus.
+	bonusChanged = Signal.new() :: Signal<Session>,
 }

@@ -1,9 +1,13 @@
 Key,Source,Context,Example,de
 hud.perMinute,{amount}/min,,,{amount}/Min
 hud.boost,2x Cash {time},,,2x Geld {time}
+hud.autoCollect,Auto Collect {time},,,Auto-Einsammeln {time}
 hud.carry,Take it to {destination}!,,,Bring es zu {destination}!
 hud.carryFragile,Fragile! Don't jump.,,,Zerbrechlich! Nicht springen.
 hud.collectorFull,Cash register full!,,,Kasse voll!
+hud.bonus,Bonus +{percent},,,Bonus +{percent}
+gift.wait,Gift in {time},,,Geschenk in {time}
+gift.ready,Open gift!,,,Geschenk öffnen!
 menu.shop,Shop,,,Shop
 menu.store,Store,,,Store
 menu.quests,Quests,,,Quests
@@ -12,6 +16,7 @@ menu.rebirth,Rebirth,,,Rebirth
 menu.style,Style,,,Style
 menu.invite,Invite,,,Einladen
 menu.info,Info,,,Info
+menu.codes,Codes,,,Codes
 shop.title,Shop,,,Shop
 shop.tabUpgrades,Upgrades,,,Upgrades
 shop.tabMachines,Machines,,,Maschinen
@@ -60,6 +65,7 @@ store.owned,Owned,,,Gekauft
 store.soon,Soon,,,Bald
 store.test,Test,,,Test
 store.noMachine,No machine to build right now,,,Gerade keine Maschine zum Bauen
+store.club,Club,,,Club
 pass.doubleCash.name,2x Cash,,,2x Geld
 pass.doubleCash.desc,Doubles all cash you earn.,,,Verdoppelt all dein Geld.
 pass.autoCollect.name,Auto Collect,,,Auto-Einsammeln
@@ -70,9 +76,19 @@ pass.fastBelts.name,Fast Belts,,,Schnelle Bänder
 pass.fastBelts.desc,25% more parcels on every belt.,,,25% mehr Pakete auf jedem Band.
 pass.biggerWarehouse.name,Bigger Warehouse,,,Größere Halle
 pass.biggerWarehouse.desc,Unlocks a fourth belt you can build with cash.,,,"Schaltet ein viertes Band frei, das du mit Geld baust."
+pass.speedyShoes.name,Speedy Shoes,,,Flitzeschuhe
+pass.speedyShoes.desc,Walk 50% faster between belt and chutes.,,,Lauf 50 % schneller zwischen Band und Rutschen.
+pass.tycoonBundle.name,Tycoon Bundle,,,Tycoon-Paket
+pass.tycoonBundle.desc,"2x Cash, Auto Collect and Fast Belts in one pass.",,,"2x Geld, Auto-Einsammeln und Schnelle Bänder in einem Pass."
 product.cashSmall.name,Cash Stack,,,Geldstapel
 product.cashMedium.name,Cash Bag,,,Geldsack
 product.cashLarge.name,Cash Truck,,,Geldtransporter
+product.starterPack.name,Starter Pack,,,Starterpaket
+product.starterPack.desc,"{amount}, 2x Cash for {minutes} min and {style}. Once per player.",,,"{amount}, {minutes} Min 2x Geld und {style}. Einmal pro Spieler."
+product.boostSmall.name,Quick Boost,,,Mini-Boost
+product.autoCollectTrial.name,Auto Collect Time,,,Auto-Einsammeln auf Zeit
+product.autoCollectTrial.desc,Machine cash goes straight to you for {minutes} minutes.,,,Maschinengeld kommt {minutes} Minuten lang direkt zu dir.
+product.doubleOffline.name,Double Offline Earnings,,,Offline-Geld verdoppeln
 product.cash.desc,Get {amount} now,,,Sofort {amount}
 product.cashBoost.name,2x Cash Boost,,,2x-Geld-Boost
 product.cashBoost.desc,Double cash for {minutes} minutes,,,Doppeltes Geld für {minutes} Minuten
@@ -83,6 +99,11 @@ cosmetic.trailRainbow,Rainbow Trail,,,Regenbogen-Spur
 cosmetic.beltNeon,Neon Belts,,,Neon-Bänder
 cosmetic.packageShiny,Shiny Parcels,,,Glänzende Pakete
 cosmetic.warehouseParty,Party Warehouse,,,Party-Halle
+cosmetic.beltGold,Golden Belts,,,Goldene Bänder
+cosmetic.trailClub,Club Trail,,,Club-Spur
+cosmetic.warehouseCandy,Candy Warehouse,,,Bonbon-Halle
+cosmetic.packageGlass,Glass Parcels,,,Glas-Pakete
+cosmetic.trailStar,Star Trail,,,Sternen-Spur
 quests.title,Daily Quests,,,Tägliche Quests
 quests.claim,Claim,,,Abholen
 quests.claimed,Done,,,Erledigt
@@ -106,6 +127,8 @@ rebirth.cost,Needs {amount},,,Braucht {amount}
 rebirth.bonus,Income x{from} -> x{to},,,Einkommen x{from} -> x{to}
 rebirth.keep,"Your cash, upgrades and machines reset. You keep passes and styles.",,,"Geld, Upgrades und Maschinen werden zurückgesetzt. Pässe und Styles bleiben."
 rebirth.button,Rebirth!,,,Rebirth!
+rebirth.milestones,Rebirth rewards,,,Rebirth-Belohnungen
+milestone.title,Rebirth {rebirths},,,Rebirth {rebirths}
 style.title,Style,,,Style
 style.trail,Trails,,,Spuren
 style.belt,Belts,,,Bänder
@@ -114,6 +137,7 @@ style.warehouse,Warehouse,,,Halle
 style.equip,Use,,,Nutzen
 style.equipped,In use,,,Aktiv
 style.empty,No styles yet. Get some in the Store!,,,Noch keine Styles. Hol dir welche im Store!
+style.fromClub,Club members only,,,Nur für Club-Mitglieder
 info.title,How to play,,,So wird gespielt
 info.text,Pick up parcels on the belt and carry them to the chute with the same color. Buy upgrades and sorting machines in the Shop. Machines put cash into your cash register: walk over it to collect.,,,Heb Pakete vom Band auf und bring sie zur Rutsche mit der gleichen Farbe. Im Shop kaufst du Upgrades und Sortiermaschinen. Maschinen legen Geld in deine Kasse: lauf drüber zum Einsammeln.
 info.rare,"Rare parcels: Golden (10x cash), Fragile (4x cash, don't jump!), Mystery (a bonus surprise).",,,"Seltene Pakete: Golden (10x Geld), Zerbrechlich (4x Geld, nicht springen!), Überraschung (ein Bonus)."
@@ -122,6 +146,36 @@ reward.smallCash,Some cash,,,Etwas Geld
 reward.bigCash,Lots of cash,,,Viel Geld
 reward.boost,2x Cash boost,,,2x-Geld-Boost
 reward.jackpot,Jackpot,,,Jackpot
+group.title,Our group,,,Unsere Gruppe
+group.desc,Join our group: +{bonus} cash and a gift!,,,Tritt unserer Gruppe bei: +{bonus} Geld und ein Geschenk!
+group.join,Join group,,,Gruppe beitreten
+group.member,Group bonus active: +{bonus} cash,,,Gruppenbonus aktiv: +{bonus} Geld
+club.title,Parcel Club,,,Paket-Club
+club.desc,"+{bonus} cash, a daily gift and the Club Trail. Renews every month.",,,"+{bonus} Geld, ein tägliches Geschenk und die Club-Spur. Verlängert sich jeden Monat."
+club.join,Join,,,Beitreten
+club.member,You're a club member!,,,Du bist Club-Mitglied!
+club.claim,Daily gift,,,Tagesgeschenk
+club.claimed,Gift claimed today,,,Heute schon abgeholt
+ads.boost,Watch an ad: 2x Cash for 10 min,,,Werbung ansehen: 2x Geld für 10 Min
+ads.doubleOffline,Watch an ad: double it,,,Werbung ansehen: verdoppeln
+ads.autoCollectTrial,Watch an ad: Auto Collect for 15 min,,,Werbung ansehen: 15 Min Auto-Einsammeln
+welcome.title,Welcome back!,,,Willkommen zurück!
+welcome.earned,Your machines earned {amount} while you were away.,,,"Deine Maschinen haben {amount} verdient, während du weg warst."
+welcome.collect,Collect,,,Einsammeln
+welcome.double,Double it,,,Verdoppeln
+offer.later,Maybe later,,,Vielleicht später
+codes.title,Codes,,,Codes
+codes.placeholder,Enter a code,,,Code eingeben
+codes.redeem,Redeem,,,Einlösen
+codes.success,Code redeemed!,,,Code eingelöst!
+codes.invalid,This code doesn't exist.,,,Diesen Code gibt es nicht.
+codes.used,You already used this code.,,,Diesen Code hast du schon benutzt.
+codes.expired,This code has expired.,,,Dieser Code ist abgelaufen.
+tutorial.grab,Tap a parcel on your belt to pick it up.,,,"Tippe auf ein Paket auf deinem Band, um es aufzuheben."
+tutorial.sort,Bring it to the chute with the same color.,,,Bring es zur Rutsche mit der gleichen Farbe.
+tutorial.sortMore,Great! Sort more parcels: {count}/{target},,,Super! Sortiere weitere Pakete: {count}/{target}
+tutorial.buyMachine,Open the Shop and buy a sorting machine.,,,Öffne den Shop und kauf eine Sortiermaschine.
+tutorial.collect,Your machine fills the cash register. Walk over it!,,,Deine Maschine füllt die Kasse. Lauf drüber!
 toast.sorted,+{amount},,,+{amount}
 toast.wrong,Wrong chute! Find {destination}.,,,Falsche Rutsche! Such {destination}.
 toast.broken,Oops! The fragile parcel broke.,,,Hoppla! Das zerbrechliche Paket ist kaputt.
@@ -143,6 +197,15 @@ toast.welcome,Welcome! Here is a gift from your friend: +{amount},,,Willkommen! 
 toast.unavailable,Coming soon!,,,Kommt bald!
 toast.purchaseThanks,Thank you! {name},,,Danke! {name}
 toast.vipOnly,VIP area! Get the VIP pass in the Store.,,,VIP-Bereich! Den VIP-Pass gibt es im Store.
+toast.tutorialDone,You're a parcel pro! +{amount},,,Du bist ein Paket-Profi! +{amount}
+toast.groupThanks,Thanks for joining the group! +{amount},,,Danke fürs Beitreten! +{amount}
+toast.clubGift,Club gift: +{amount},,,Club-Geschenk: +{amount}
+toast.clubWelcome,Welcome to the Parcel Club!,,,Willkommen im Paket-Club!
+toast.autoCollect,Auto Collect for {minutes} min!,,,{minutes} Min Auto-Einsammeln!
+toast.adUnavailable,No ad available right now. Try again later!,,,Gerade keine Werbung verfügbar. Versuch es später!
+toast.adLimit,That's all ads for today.,,,Für heute sind alle Werbungen verbraucht.
+toast.milestone,Rebirth reward unlocked: {name}!,,,Rebirth-Belohnung freigeschaltet: {name}!
+toast.shopHint,Open Shop,,,Shop öffnen
 board.TopEarned,Top Earners,,,Top-Verdiener
 board.TopRebirths,Most Rebirths,,,Meiste Rebirths
 board.TopSorted,Most Parcels Sorted,,,Meiste Pakete sortiert

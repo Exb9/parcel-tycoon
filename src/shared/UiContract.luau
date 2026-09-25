@@ -11,11 +11,12 @@
 --   Text       a TextLabel/TextButton, or a GuiObject with a TextLabel named "Text" inside; the code
 --              writes its text
 --   Image      an ImageLabel
+--   TextBox    a TextBox (text input)
 -- Static texts (titles, button captions) are not listed: they get a TextKey attribute instead
 -- (keys in src/localization/GameText.csv) and the client translates them.
 -- Pure data, so Lune can load it.
 
-export type Kind = "ScreenGui" | "Button" | "Frame" | "Text" | "Image"
+export type Kind = "ScreenGui" | "Button" | "Frame" | "Text" | "Image" | "TextBox"
 
 export type Element = {
 	-- Slash-separated path below PlayerGui (the ScreenGuis are copied there from StarterGui).
@@ -37,8 +38,14 @@ add("HUD/Income", "Text")
 add("HUD/Boost", "Text")
 add("HUD/CarryHint", "Text")
 add("HUD/CollectorFull", "Frame")
+add("HUD/AutoCollect", "Text", true)
+add("HUD/Bonus", "Text", true)
+add("HUD/Tutorial", "Text")
+-- Playtime gift: countdown, then "Open gift!" (TextButton, or a button with a TextLabel named "Text").
+add("HUD/Gift", "Button")
+add("HUD/AdBoost", "Button")
 add("HUD/Menu", "Frame")
-for _, name in { "Shop", "Store", "Quests", "Daily", "Rebirth", "Style", "Invite", "Info" } do
+for _, name in { "Shop", "Store", "Quests", "Daily", "Rebirth", "Style", "Invite", "Codes", "Info" } do
 	add(`HUD/Menu/{name}`, "Button")
 end
 for _, name in { "Quests", "Daily", "Rebirth" } do
@@ -91,6 +98,7 @@ window("Store")
 tab("Store", "Passes")
 tab("Store", "Products")
 tab("Store", "Styles")
+tab("Store", "Club")
 for _, name in { "Passes", "Products", "Styles" } do
 	list(`Windows/Store/{name}`, {
 		{ name = "Title", kind = "Text" },
@@ -101,6 +109,15 @@ for _, name in { "Passes", "Products", "Styles" } do
 		{ name = "Owned", kind = "Frame", optional = true },
 	})
 end
+-- Rewarded video: try Auto Collect (shown when an ad is available and Auto Collect isn't owned).
+add("Windows/Store/AdAutoCollect", "Button")
+add("Windows/Store/Club", "Frame")
+add("Windows/Store/Club/Description", "Text")
+add("Windows/Store/Club/Price", "Text")
+add("Windows/Store/Club/Join", "Button")
+add("Windows/Store/Club/Member", "Frame")
+add("Windows/Store/Club/Claim", "Button")
+add("Windows/Store/Club/Claimed", "Frame", true)
 
 window("Quests")
 list("Windows/Quests/List", {
@@ -132,6 +149,11 @@ add("Windows/Rebirth/Bonus", "Text")
 add("Windows/Rebirth/Confirm", "Button")
 add("Windows/Rebirth/Bar", "Frame", true)
 add("Windows/Rebirth/Bar/Fill", "Frame", true)
+list("Windows/Rebirth/Milestones", {
+	{ name = "Title", kind = "Text" },
+	{ name = "Reward", kind = "Text" },
+	{ name = "Done", kind = "Frame", optional = true },
+})
 
 window("Style")
 list("Windows/Style/List", {
@@ -147,15 +169,41 @@ list("Windows/Info/Odds", {
 	{ name = "Title", kind = "Text" },
 	{ name = "Chance", kind = "Text" },
 })
+-- Roblox group panel (hidden while Config.Rewards.group.groupId is 0).
+add("Windows/Info/Group", "Frame")
+add("Windows/Info/Group/Status", "Text")
+add("Windows/Info/Group/Join", "Button")
+
+-- Popup with one offer (starter pack, Auto Collect when the cash register is full, ...).
+window("Offer")
+add("Windows/Offer/Title", "Text")
+add("Windows/Offer/Description", "Text")
+add("Windows/Offer/Price", "Text")
+add("Windows/Offer/Buy", "Button")
+add("Windows/Offer/Icon", "Image", true)
+
+-- Offline earnings after joining, with "double it" by video ad or Robux.
+window("WelcomeBack")
+add("Windows/WelcomeBack/Amount", "Text")
+add("Windows/WelcomeBack/Collect", "Button")
+add("Windows/WelcomeBack/DoubleAd", "Button")
+add("Windows/WelcomeBack/DoubleBuy", "Button")
+add("Windows/WelcomeBack/DoublePrice", "Text")
+
+window("Codes")
+add("Windows/Codes/Input", "TextBox")
+add("Windows/Codes/Redeem", "Button")
 
 -- Toasts ------------------------------------------------------------------------------------------
 add("Toasts", "ScreenGui")
 add("Toasts/Small", "Frame")
 add("Toasts/Small/Template", "Text")
+-- Optional link button on some small toasts (e.g. "Open Shop" when cash is missing).
+add("Toasts/Small/Template/Action", "Button", true)
 add("Toasts/Big", "Frame")
 add("Toasts/Big/Template", "Text")
 
 return {
 	elements = elements,
-	windows = { "Shop", "Store", "Quests", "Daily", "Rebirth", "Style", "Info" },
+	windows = { "Shop", "Store", "Quests", "Daily", "Rebirth", "Style", "Info", "Offer", "WelcomeBack", "Codes" },
 }

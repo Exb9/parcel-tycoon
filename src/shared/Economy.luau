@@ -257,9 +257,10 @@ function Economy.packageValue(progress: Progress, packageType: PackageType): num
 		* Economy.rebirthMultiplier(progress.rebirths)
 end
 
--- Multiplier on every cash gain from sorting: the 2x Cash pass and the active boost.
-function Economy.cashMultiplier(passes: Passes?, boostActive: boolean): number
-	local multiplier = 1
+-- Multiplier on every cash gain from sorting: the 2x Cash pass, the active boost and the additive
+-- bonuses (friends, group, club; 0.1 = +10 %).
+function Economy.cashMultiplier(passes: Passes?, boostActive: boolean, bonus: number?): number
+	local multiplier = 1 + math.max(0, bonus or 0)
 	if passes and passes.doubleCash then
 		multiplier *= Config.Monetization.doubleCashMultiplier
 	end
@@ -267,6 +268,15 @@ function Economy.cashMultiplier(passes: Passes?, boostActive: boolean): number
 		multiplier *= Config.Economy.boostMultiplier
 	end
 	return multiplier
+end
+
+-- Additive cash bonus from playing with friends, the group and the club subscription.
+function Economy.cashBonus(friendsOnServer: number, inGroup: boolean, clubMember: boolean): number
+	local rewards = Config.Rewards
+	local friends = math.min(rewards.friends.maxBonus, math.max(0, friendsOnServer) * rewards.friends.bonusPerFriend)
+	local group = if inGroup and rewards.group.groupId ~= 0 then rewards.group.cashBonus else 0
+	local club = if clubMember then Config.Monetization.club.cashBonus else 0
+	return friends + group + club
 end
 
 type Segment = { manual: number, machines: number, hand: number }

@@ -60,6 +60,17 @@ export type Session = {
 	lastGrab: number,
 	lastWrongNotice: number,
 	joinedAt: number,
+	-- Cash bonus inputs (Economy.cashBonus): friends on this server, group member, club subscriber.
+	friendsOnServer: number,
+	inGroup: boolean,
+	clubMember: boolean,
+	-- Offline earnings paid at join, which the "double" product pays once more (this session only).
+	pendingOffline: number,
+	-- Contextual offers shown this session and when the last one was shown (os.clock()).
+	offersShown: { [string]: boolean },
+	lastOfferAt: number,
+	-- A rewarded video ad is playing.
+	adPlaying: boolean,
 	-- State sections that changed since the last update to the client.
 	dirty: { [string]: boolean },
 	removed: boolean,

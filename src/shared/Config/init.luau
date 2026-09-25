@@ -18,6 +18,7 @@ return deepFreeze({
 	Gameplay = require("@self/Gameplay"),
 	Leaderboards = require("@self/Leaderboards"),
 	Monetization = require("@self/Monetization"),
+	Onboarding = require("@self/Onboarding"),
 	PackageTypes = require("@self/PackageTypes"),
 	Purchases = require("@self/Purchases"),
 	Quests = require("@self/Quests"),

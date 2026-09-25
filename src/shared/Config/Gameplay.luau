@@ -44,4 +44,8 @@ return {
 
 	-- Horizontal distance to the cash register that collects it.
 	collectorRadius = 5,
+
+	-- Character walk speed (Roblox default); the Speedy Shoes pass raises it
+	-- (Config.Monetization.speedyShoesWalkSpeed, below carry.maxTravelSpeed).
+	walkSpeed = 16,
 }

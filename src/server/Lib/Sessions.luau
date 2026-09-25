@@ -29,6 +29,13 @@ function Sessions.create(player: Player, profile: any, data: any): Session
 		lastGrab = 0,
 		lastWrongNotice = 0,
 		joinedAt = os.clock(),
+		friendsOnServer = 0,
+		inGroup = false,
+		clubMember = false,
+		pendingOffline = 0,
+		offersShown = {},
+		lastOfferAt = -math.huge,
+		adPlaying = false,
 		dirty = {},
 		removed = false,
 	}

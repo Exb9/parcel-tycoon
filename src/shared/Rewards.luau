@@ -21,8 +21,10 @@ export type Context = {
 	packageValue: number?,
 }
 
--- PlayerData.daily (DataSchema).
+-- PlayerData.daily, .playtime and .milestones (DataSchema).
 type DailyData = { lastClaimDay: number, step: number }
+type PlaytimeData = { day: number, seconds: number, claimed: number }
+type MilestoneData = { [string]: boolean }
 
 local Rewards = {}
 
@@ -81,6 +83,69 @@ function Rewards.claimDaily(daily: DailyData, day: number): Reward?
 	daily.step = step
 	daily.lastClaimDay = day
 	return reward
+end
+
+-- Playtime gifts ------------------------------------------------------------------------------------
+
+-- Starts a new day of playtime gifts when the UTC day changed. Returns true if it reset.
+function Rewards.ensurePlaytimeDay(playtime: PlaytimeData, day: number): boolean
+	if playtime.day == day then
+		return false
+	end
+	playtime.day = day
+	playtime.seconds = 0
+	playtime.claimed = 0
+	return true
+end
+
+-- The next gift to open today (index into Config.Rewards.playtime), or nil when all are opened.
+function Rewards.nextGift(playtime: PlaytimeData): (number?, RewardsConfig.PlaytimeGift?)
+	local index = playtime.claimed + 1
+	local gift = Config.Rewards.playtime[index]
+	if gift == nil then
+		return nil, nil
+	end
+	return index, gift
+end
+
+-- Seconds until the next gift can be opened (0 = ready), or nil when all are opened today.
+function Rewards.secondsToNextGift(playtime: PlaytimeData): number?
+	local _, gift = Rewards.nextGift(playtime)
+	if gift == nil then
+		return nil
+	end
+	return math.max(0, gift.minutes * 60 - playtime.seconds)
+end
+
+-- Opens the next gift if its time has come. Returns its reward, or nil.
+function Rewards.openGift(playtime: PlaytimeData, day: number): Reward?
+	Rewards.ensurePlaytimeDay(playtime, day)
+	local _, gift = Rewards.nextGift(playtime)
+	if gift == nil or playtime.seconds < gift.minutes * 60 then
+		return nil
+	end
+	playtime.claimed += 1
+	return gift.reward
+end
+
+-- Rebirth milestones ------------------------------------------------------------------------------
+
+-- Milestones reached with `rebirths` that were not rewarded yet, in order.
+function Rewards.pendingMilestones(milestones: MilestoneData, rebirths: number): { RewardsConfig.Milestone }
+	local pending = {}
+	for _, milestone in Config.Rewards.rebirthMilestones do
+		if rebirths >= milestone.rebirths and not milestones[tostring(milestone.rebirths)] then
+			table.insert(pending, milestone)
+		end
+	end
+	return pending
+end
+
+-- Codes -------------------------------------------------------------------------------------------
+
+-- Codes are typed by kids on phones: ignore case, spaces and punctuation.
+function Rewards.normalizeCode(text: string): string
+	return string.upper((string.gsub(text, "[^%w]", "")))
 end
 
 return Rewards

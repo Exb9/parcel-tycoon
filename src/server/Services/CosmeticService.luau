@@ -1,8 +1,9 @@
 --!strict
 -- Cosmetics (trails, belt, package and warehouse skins) and the VIP area door.
--- Cosmetics are bought as developer products (MonetizationService grants them). Belt and warehouse
--- skins are applied by PlotService, package skins by BeltService, both when cosmeticsChanged fires.
--- Trails are Studio-built templates in ServerStorage.CosmeticTemplates (docs/MAP_CONTRACT.md).
+-- Styles come from gamepasses, the starter pack, the club subscription and rebirth milestones
+-- (shared/Styles). Belt and warehouse skins are applied by PlotService, package skins by BeltService,
+-- both when cosmeticsChanged fires. Trails are Studio-built templates in ServerStorage.CosmeticTemplates
+-- (docs/MAP_CONTRACT.md).
 
 local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +17,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local RateLimit = require(script.Parent.Parent.Lib.RateLimit)
 local Sessions = require(script.Parent.Parent.Lib.Sessions)
 local StateService = require(script.Parent.StateService)
+local Styles = require(ReplicatedStorage.Shared.Styles)
 local Types = require(script.Parent.Parent.Lib.Types)
 
 type Session = Types.Session
@@ -39,7 +41,7 @@ function CosmeticService.item(cosmeticId: string): Cosmetic?
 end
 
 function CosmeticService.owns(session: Session, cosmeticId: string): boolean
-	return itemsById[cosmeticId] ~= nil and session.data.cosmetics.owned[cosmeticId] == true
+	return Styles.owns(session.data.cosmetics.owned, session.passes, session.clubMember, cosmeticId)
 end
 
 local function applyTrail(session: Session)
@@ -77,22 +79,48 @@ local function applyTrail(session: Session)
 	trail.Parent = root
 end
 
--- Unlocks a cosmetic and equips it. Returns true if it is new.
+-- Uses a style the player owns (e.g. right after buying it).
+function CosmeticService.equip(session: Session, cosmeticId: string)
+	local item = itemsById[cosmeticId]
+	if item == nil or not CosmeticService.owns(session, cosmeticId) then
+		return
+	end
+	session.data.cosmetics.equipped[item.slot] = cosmeticId
+	StateService.mark(session, "cosmetics")
+	if item.slot == "trail" then
+		applyTrail(session)
+	end
+	Events.cosmeticsChanged:Fire(session)
+end
+
+-- Unlocks a style for good (starter pack, rebirth milestones) and equips it. Returns true if it is new.
 function CosmeticService.grant(session: Session, cosmeticId: string): boolean
 	local item = itemsById[cosmeticId]
 	if item == nil or CosmeticService.owns(session, cosmeticId) then
 		return false
 	end
-	local cosmetics = session.data.cosmetics
-	cosmetics.owned[cosmeticId] = true
-	cosmetics.equipped[item.slot] = cosmeticId
-	StateService.mark(session, "cosmetics")
+	session.data.cosmetics.owned[cosmeticId] = true
 	StateService.notify(session, "toast.cosmetic", { cosmeticId = cosmeticId }, "big", "reward")
-	if item.slot == "trail" then
-		applyTrail(session)
-	end
-	Events.cosmeticsChanged:Fire(session)
+	CosmeticService.equip(session, cosmeticId)
 	return true
+end
+
+-- Stops using styles the player no longer owns. Called when the club subscription ended (passes are
+-- loaded by then; calling it before the pass checks finished would drop pass styles).
+function CosmeticService.dropUnowned(session: Session)
+	local equipped = session.data.cosmetics.equipped
+	local changed = false
+	for slot, cosmeticId in equipped do
+		if not CosmeticService.owns(session, cosmeticId) then
+			equipped[slot] = nil
+			changed = true
+		end
+	end
+	StateService.mark(session, "cosmetics")
+	if changed then
+		applyTrail(session)
+		Events.cosmeticsChanged:Fire(session)
+	end
 end
 
 local function onEquip(player: Player, slot: any, cosmeticId: any)

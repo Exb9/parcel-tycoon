@@ -20,9 +20,13 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Economy = require(ReplicatedStorage.Shared.Economy)
 local EconomyService = require(script.Parent.EconomyService)
 local Events = require(script.Parent.Parent.Lib.Events)
+local FriendsService = require(script.Parent.FriendsService)
 local MonetizationService = require(script.Parent.MonetizationService)
+local OfferService = require(script.Parent.OfferService)
 local PlotService = require(script.Parent.PlotService)
 local Quests = require(ReplicatedStorage.Shared.Quests)
+local Rewards = require(ReplicatedStorage.Shared.Rewards)
+local RewardService = require(script.Parent.RewardService)
 local Sessions = require(script.Parent.Parent.Lib.Sessions)
 local StateService = require(script.Parent.StateService)
 local Types = require(script.Parent.Parent.Lib.Types)
@@ -73,6 +77,14 @@ local function summary(session: Session): { [string]: any }
 		stats = table.clone(data.stats),
 		quests = data.quests.daily,
 		daily = table.clone(data.daily),
+		bonus = EconomyService.bonus(session),
+		friendsOnServer = session.friendsOnServer,
+		inGroup = session.inGroup,
+		clubMember = session.clubMember,
+		autoCollect = EconomyService.hasAutoCollect(session),
+		tutorial = table.clone(data.onboarding),
+		playtime = table.clone(data.playtime),
+		ads = data.ads.counts,
 	}
 end
 
@@ -167,7 +179,7 @@ local commands: { [string]: Command } = {
 		end,
 	},
 	offline = {
-		usage = "offline <seconds> - pay offline earnings as if the player just came back after that long",
+		usage = "offline <seconds> - pay offline earnings as after that long away (opens the welcome-back window)",
 		run = function(session, seconds: any)
 			return EconomyService.payOfflineEarnings(session, tonumber(seconds) or 0)
 		end,
@@ -194,6 +206,65 @@ local commands: { [string]: Command } = {
 			end
 			StateService.mark(session, "quests")
 			return data.daily
+		end,
+	},
+	ad = {
+		usage = "ad <boost|doubleOffline|autoCollectTrial> - grant what the video ad of that placement gives",
+		run = function(session, placement: any)
+			local config = Config.Monetization.ads[tostring(placement)]
+			assert(config, "unknown ad placement")
+			MonetizationService.grantProduct(session, config.productKey)
+			return true
+		end,
+	},
+	club = {
+		usage = "club [off] - make the player a club member (or end it)",
+		run = function(session, mode: any)
+			MonetizationService.setClubMember(session, mode ~= "off")
+			return session.clubMember
+		end,
+	},
+	friends = {
+		usage = "friends <count> - pretend this many friends are on the server",
+		run = function(session, count: any)
+			FriendsService.setFriends(session, tonumber(count) or 0)
+			return EconomyService.bonus(session)
+		end,
+	},
+	group = {
+		usage = "group [off] - pretend the player is in the group (gives the join gift once)",
+		run = function(session, mode: any)
+			RewardService.setInGroup(session, mode ~= "off")
+			return EconomyService.bonus(session)
+		end,
+	},
+	gift = {
+		usage = "gift - make the next playtime gift ready",
+		run = function(session)
+			local seconds = Rewards.secondsToNextGift(session.data.playtime)
+			if seconds and seconds > 0 then
+				RewardService.tickPlaytime(session, seconds)
+			end
+			return session.data.playtime
+		end,
+	},
+	tutorial = {
+		usage = "tutorial [done] - restart the first-time tutorial (or finish it)",
+		run = function(session, mode: any)
+			local onboarding = session.data.onboarding
+			onboarding.step = if mode == "done" then #Config.Onboarding.steps + 1 else 1
+			onboarding.count = 0
+			onboarding.done = mode == "done"
+			StateService.mark(session, "tutorial")
+			return onboarding
+		end,
+	},
+	offer = {
+		usage = "offer <pass|product> <key> - show an offer popup now (ignores the cooldown)",
+		run = function(session, kind: any, key: any)
+			session.lastOfferAt = -math.huge
+			session.offersShown[`{kind}:{key}`] = nil
+			return OfferService.show(session, kind, tostring(key))
 		end,
 	},
 	home = {

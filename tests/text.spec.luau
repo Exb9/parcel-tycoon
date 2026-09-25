@@ -73,16 +73,22 @@ Test.test("every package type, upgrade, pass, product, cosmetic, quest and board
 			has("purchase." .. purchase.id)
 		end
 	end
-	for key in Config.Monetization.gamepasses do
-		has("pass." .. key .. ".name")
-		has("pass." .. key .. ".desc")
-	end
-	for key, product in Config.Monetization.products do
-		if product.kind == "cosmetic" then
-			has("cosmetic." .. (product.cosmeticId or ""))
+	for key, pass in Config.Monetization.gamepasses do
+		if pass.cosmeticId then
+			has("cosmetic." .. pass.cosmeticId)
 		else
-			has("product." .. key .. ".name")
+			has("pass." .. key .. ".name")
+			has("pass." .. key .. ".desc")
 		end
+	end
+	for key in Config.Monetization.products do
+		has("product." .. key .. ".name")
+	end
+	for placement in Config.Monetization.ads do
+		has("ads." .. placement)
+	end
+	for _, step in Config.Onboarding.steps do
+		has("tutorial." .. step.id)
 	end
 	for _, item in Config.Cosmetics.items do
 		has("cosmetic." .. item.id)

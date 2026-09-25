@@ -6,7 +6,7 @@
 --   1. bump VERSION,
 --   2. add MIGRATIONS[VERSION] that upgrades data saved with VERSION - 1,
 --   3. update the template (new fields with defaults are also filled in by ProfileStore's Reconcile),
---   4. add a case to tests/data.spec.luau.
+--   4. add a case to tests/logic.spec.luau.
 
 local Economy = require("./Economy")
 
@@ -23,6 +23,7 @@ export type PlayerData = {
 	-- Machine income waiting in the cash register.
 	collector: number,
 	progress: Economy.Progress,
+	-- Leaderboards: money, rebirths, sorted packages (brief).
 	stats: {
 		totalEarned: number,
 		sortedManual: number,
@@ -30,28 +31,17 @@ export type PlayerData = {
 		sortedTotal: number,
 		rareSorted: number,
 		rebirths: number,
-		playSeconds: number,
-		robuxSpent: number,
 	},
 	-- os.time() of the last save while online (offline earnings).
 	lastOnline: number,
-	-- Login calendar: last UTC day index claimed and position in the 7-step calendar.
+	-- Daily rewards: last UTC day index claimed and position in the 7-step calendar.
 	daily: { lastClaimDay: number, step: number },
-	-- Playtime gifts for the current UTC day.
-	playtime: { day: number, seconds: number, claimed: { boolean } },
-	quests: {
-		day: number,
-		daily: { QuestState },
-		tutorialStep: number,
-		tutorialProgress: number,
-	},
+	quests: { day: number, daily: { QuestState } },
 	-- Cash boost end time (os.time()).
 	boostUntil: number,
+	-- Cosmetics bought with Robux, and the one equipped per slot.
 	cosmetics: { owned: { [string]: boolean }, equipped: { [string]: string } },
-	vip: { lastGiftDay: number },
 	referrals: { day: number, rewardedToday: number, welcomed: boolean },
-	-- Rebirth milestone rewards already given (by rebirth count as string key).
-	milestones: { [string]: boolean },
 	-- Recent developer product receipts, for idempotent ProcessReceipt handling.
 	purchaseIds: { string },
 }
@@ -73,18 +63,13 @@ function DataSchema.template(): PlayerData
 			sortedTotal = 0,
 			rareSorted = 0,
 			rebirths = 0,
-			playSeconds = 0,
-			robuxSpent = 0,
 		},
 		lastOnline = 0,
 		daily = { lastClaimDay = -1, step = 0 },
-		playtime = { day = -1, seconds = 0, claimed = { false, false, false, false } },
-		quests = { day = -1, daily = {}, tutorialStep = 1, tutorialProgress = 0 },
+		quests = { day = -1, daily = {} },
 		boostUntil = 0,
 		cosmetics = { owned = {}, equipped = {} },
-		vip = { lastGiftDay = -1 },
 		referrals = { day = -1, rewardedToday = 0, welcomed = false },
-		milestones = {},
 		purchaseIds = {},
 	}
 end
@@ -135,9 +120,9 @@ function DataSchema.sanitize(data: PlayerData)
 	data.lastOnline = finiteOr(data.lastOnline, 0)
 	local progress = data.progress
 	progress.rebirths = math.max(0, math.floor(finiteOr(progress.rebirths, 0)))
-	local ok = pcall(Economy.getZone, progress.zone)
-	if not ok then
-		progress.zone = Economy.highestUnlockedZone(progress.rebirths)
+	local ok, zone = pcall(Economy.getZone, progress.zone)
+	if not ok or not zone.available then
+		progress.zone = "postOffice"
 	end
 	for trackId, level in progress.upgrades do
 		local track = Economy.findTrack(trackId)

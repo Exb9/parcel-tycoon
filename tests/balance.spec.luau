@@ -35,8 +35,8 @@ Test.test("second belt after 35-55 minutes", function()
 	Test.between(minutesOf(firstRun.firstBought.belt2), 35, 55)
 end)
 
-Test.test("rebirth cycles 1-6 take 45-75 minutes (zone 2 from rebirth 3)", function()
-	for rebirths = 0, 5 do
+Test.test("rebirth cycles 1-3 take 45-75 minutes", function()
+	for rebirths = 0, 2 do
 		local cycle = if rebirths == 0 then firstRun else BalanceSim.runCycle({ rebirths = rebirths })
 		Test.between(minutesOf(cycle.rebirthSecond), 45, 75, `rebirth cycle {rebirths + 1}`)
 	end

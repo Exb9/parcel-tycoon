@@ -21,18 +21,35 @@ Test.test("new progress earns only from manual sorting", function()
 	Test.truthy(income.manualPerMinute > 0, "manual income should be positive")
 end)
 
-Test.test("sorter automates its type index up to its rate, scaled by accuracy", function()
+Test.test("a sorter automates its type as long as the player keeps the belt moving", function()
 	local progress = Economy.newProgress()
 	progress.purchases.b1_sorter1 = true
 	local letter = Economy.packageTypeAt("postOffice", 1)
 	assert(letter, "letter type missing")
-	local arriving = Config.Economy.spawnsPerMinute * letter.spawnWeight / 100
-	local expected = math.min(arriving, Config.Economy.sorterBaseRate)
-		* letter.baseValue
-		* Config.Economy.sorterBaseAccuracy
-	Test.near(Economy.incomePerMinute(progress).machinesPerMinute, expected, 1e-9)
+	-- Supply 14/min: letters (7/min) stay below the machine rate, the player handles the rest.
+	local arriving = Config.Economy.spawnsPerMinute * letter.spawnWeight / 100 * (1 - Economy.rareShare())
+	local expected = arriving * letter.baseValue * Config.Economy.sorterBaseAccuracy
+	Test.near(Economy.incomePerMinute(progress, 12).machinesPerMinute, expected, 1e-6)
 	progress.upgrades.sorterAccuracy = 5
 	Test.equal(Economy.sorterAccuracy(progress), 1)
+end)
+
+Test.test("without manual help a belt with unsorted types jams (paused chute)", function()
+	local progress = Economy.newProgress()
+	progress.purchases.b1_sorter1 = true
+	Test.equal(Economy.incomePerMinute(progress, 0).totalPerMinute, 0)
+end)
+
+Test.test("manual capacity limits a belt's intake", function()
+	local progress = Economy.newProgress()
+	progress.upgrades.beltSpeed = 25
+	progress.purchases = { spawner2 = true, spawner3 = true }
+	-- 147 packages/min arrive but without machines the player's 12 sorts/min are the whole intake.
+	local income = Economy.incomePerMinute(progress, 12)
+	local crate = Economy.packageTypeAt("postOffice", 3)
+	assert(crate, "crate type missing")
+	Test.truthy(income.manualPerMinute <= 12 * crate.baseValue + 1e-6, "manual income bounded by the manual rate")
+	Test.equal(income.machinesPerMinute, 0)
 end)
 
 Test.test("purchases unlock in order and respect required passes", function()
@@ -62,36 +79,23 @@ Test.test("purchase references are consistent", function()
 	end
 end)
 
-Test.test("every available zone has three package types with indices 1-3", function()
-	for _, zone in Config.Zones.zones do
-		if zone.available then
-			local types = Economy.packageTypesForZone(zone.id)
-			Test.equal(#types, 3, `types in {zone.id}`)
-			for i, packageType in types do
-				Test.equal(packageType.index, i, `index order in {zone.id}`)
-			end
-		end
+Test.test("the post office has three package types with indices 1-3", function()
+	local types = Economy.packageTypesForZone("postOffice")
+	Test.equal(#types, 3)
+	for i, packageType in types do
+		Test.equal(packageType.index, i)
 	end
 end)
 
-Test.test("zones unlock by rebirths and skip unavailable ones", function()
-	Test.equal(Economy.highestUnlockedZone(0), "postOffice")
-	Test.equal(Economy.highestUnlockedZone(2), "postOffice")
-	Test.equal(Economy.highestUnlockedZone(3), "airportCargo")
-	Test.equal(Economy.highestUnlockedZone(50), "airportCargo")
-end)
-
-Test.test("rebirth resets progress but keeps comfort upgrades", function()
+Test.test("rebirth resets money-bought progress and keeps the zone", function()
 	local progress = Economy.newProgress()
 	progress.rebirths = 2
 	progress.upgrades = { beltSpeed = 10, offlineCap = 2, collectorCapacity = 1 }
 	progress.purchases = { b1_sorter1 = true }
 	local after = Economy.rebirth(progress)
 	Test.equal(after.rebirths, 3)
-	Test.equal(after.zone, "airportCargo")
-	Test.equal(after.upgrades.beltSpeed, nil)
-	Test.equal(after.upgrades.offlineCap, 2)
-	Test.equal(after.upgrades.collectorCapacity, 1)
+	Test.equal(after.zone, "postOffice")
+	Test.equal(next(after.upgrades), nil)
 	Test.equal(next(after.purchases), nil)
 end)
 
@@ -102,29 +106,29 @@ Test.test("rebirth multiplier and cost", function()
 	Test.equal(Economy.rebirthCost(1), Config.Economy.rebirth.baseCost * Config.Economy.rebirth.costGrowth)
 end)
 
-Test.test("cash multiplier stacks passes and boost", function()
+Test.test("cash multiplier stacks 2x Cash and the boost", function()
 	Test.equal(Economy.cashMultiplier(nil, false), 1)
+	Test.equal(Economy.cashMultiplier({ doubleCash = true }, false), 2)
 	Test.equal(Economy.cashMultiplier({ doubleCash = true }, true), 4)
-	Test.near(Economy.cashMultiplier({ vip = true }, false), 1 + Config.Monetization.vipCashBonus, 1e-9)
+	Test.equal(Economy.cashMultiplier({ vip = true }, false), 1)
 end)
 
-Test.test("offline earnings are machine-only, capped and ignore short absences", function()
+Test.test("offline earnings are a capped share of machine income", function()
 	local progress = Economy.newProgress()
 	Test.equal(Economy.offlineEarnings(progress, 3600), 0)
 	progress.purchases.b1_sorter1 = true
-	Test.equal(Economy.offlineEarnings(progress, 60), 0)
-	local perMinute = Economy.incomePerMinute(progress).machinesPerMinute * Config.Economy.offline.efficiency
+	local perMinute = Economy.machineIncome(progress) * Config.Economy.offline.efficiency
 	local capMinutes = Config.Economy.offline.baseCapHours * 60
 	Test.equal(Economy.offlineEarnings(progress, 10 * 3600), math.floor(perMinute * capMinutes))
 	Test.equal(
 		Economy.offlineEarnings(progress, 10 * 3600, { doubleCash = true }),
-		math.floor(perMinute * capMinutes * 2)
+		math.floor(perMinute * 2 * capMinutes)
 	)
 	progress.upgrades.offlineCap = 1
 	Test.equal(Economy.offlineCapHours(progress), Config.Economy.offline.baseCapHours + 2)
 end)
 
-Test.test("collector capacity has a floor and grows with its upgrade", function()
+Test.test("cash register capacity has a floor and grows with its upgrade", function()
 	local progress = Economy.newProgress()
 	Test.equal(Economy.collectorCapacity(progress), Config.Economy.collector.minimumCapacity)
 	progress.purchases.b1_sorter1 = true

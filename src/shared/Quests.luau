@@ -1,5 +1,5 @@
 --!strict
--- Tutorial chain and daily quests (pure logic; QuestService applies it to player data).
+-- Daily quests (pure logic; QuestService applies it to player data).
 
 local Config = require("./Config")
 local DataSchema = require("./DataSchema")
@@ -15,7 +15,13 @@ export type QuestEvent = {
 	kind: QuestKind,
 	amount: number,
 	typeIndex: number?,
-	purchaseId: string?,
+}
+
+export type EventResult = {
+	-- Any quest progress changed.
+	changed: boolean,
+	-- Daily quests that just reached their target.
+	completed: { string },
 }
 
 local Quests = {}
@@ -32,13 +38,8 @@ function Quests.dayIndex(unixTime: number): number
 	return math.floor(unixTime / SECONDS_PER_DAY)
 end
 
-function Quests.dailyDef(questId: string): QuestDef?
+function Quests.def(questId: string): QuestDef?
 	return dailyById[questId]
-end
-
--- The current tutorial quest, or nil once the tutorial is done.
-function Quests.tutorialDef(data: QuestData): QuestDef?
-	return Config.Quests.tutorial[data.tutorialStep]
 end
 
 local function targetFor(def: QuestDef, incomePerMinute: number): number
@@ -55,8 +56,7 @@ function Quests.drawDaily(day: number, userId: number, incomePerMinute: number):
 	local pool = table.clone(Config.Quests.dailyPool)
 	local quests: { QuestState } = {}
 	for _ = 1, math.min(Config.Quests.dailyCount, #pool) do
-		local index = Rng.int(rng, 1, #pool)
-		local def = table.remove(pool, index)
+		local def = table.remove(pool, Rng.int(rng, 1, #pool))
 		assert(def, "daily pool index out of range")
 		table.insert(quests, {
 			id = def.id,
@@ -85,49 +85,30 @@ local function matches(def: QuestDef, event: QuestEvent): boolean
 	if def.typeIndex ~= nil and def.typeIndex ~= event.typeIndex then
 		return false
 	end
-	if def.purchaseId ~= nil and def.purchaseId ~= event.purchaseId then
-		return false
-	end
 	return true
 end
 
--- Events feed several quest kinds: a manual sort also counts for "sortType" and "sortRare" quests
--- through separate events sent by the caller.
-export type EventResult = {
-	-- The tutorial step that was completed by this event (its reward is due), if any.
-	tutorialCompleted: QuestDef?,
-	-- Daily quests that just reached their target.
-	dailyCompleted: { string },
-}
-
 function Quests.applyEvent(data: QuestData, event: QuestEvent): EventResult
-	local result: EventResult = { tutorialCompleted = nil, dailyCompleted = {} }
-
-	local tutorial = Quests.tutorialDef(data)
-	if tutorial and matches(tutorial, event) then
-		data.tutorialProgress += event.amount
-		if data.tutorialProgress >= (tutorial.target or 1) then
-			result.tutorialCompleted = tutorial
-			data.tutorialStep += 1
-			data.tutorialProgress = 0
-		end
-	end
-
+	local result: EventResult = { changed = false, completed = {} }
 	for _, quest in data.daily do
 		local def = dailyById[quest.id]
 		if def and not quest.claimed and quest.progress < quest.target and matches(def, event) then
+			result.changed = true
 			quest.progress = math.min(quest.target, quest.progress + event.amount)
 			if quest.progress >= quest.target then
-				table.insert(result.dailyCompleted, quest.id)
+				table.insert(result.completed, quest.id)
 			end
 		end
 	end
-
 	return result
 end
 
+function Quests.rewardCash(def: QuestDef, incomePerMinute: number): number
+	return math.max(def.rewardMinimumCash, math.floor(incomePerMinute * def.rewardIncomeMinutes))
+end
+
 -- Claims a finished daily quest. Returns the cash reward, or nil if it cannot be claimed.
-function Quests.claimDaily(data: QuestData, questId: string, incomePerMinute: number): number?
+function Quests.claim(data: QuestData, questId: string, incomePerMinute: number): number?
 	for _, quest in data.daily do
 		if quest.id == questId then
 			local def = dailyById[questId]
@@ -139,14 +120,6 @@ function Quests.claimDaily(data: QuestData, questId: string, incomePerMinute: nu
 		end
 	end
 	return nil
-end
-
-function Quests.rewardCash(def: QuestDef, incomePerMinute: number): number
-	if def.rewardCash then
-		return def.rewardCash
-	end
-	local minutes = def.rewardIncomeMinutes or 0
-	return math.max(def.rewardMinimumCash or 0, math.floor(incomePerMinute * minutes))
 end
 
 return Quests

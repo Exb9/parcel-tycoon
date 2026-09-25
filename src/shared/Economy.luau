@@ -14,7 +14,7 @@ export type Purchase = PurchasesConfig.Purchase
 export type UpgradeTrack = UpgradesConfig.UpgradeTrack
 export type Zone = ZonesConfig.Zone
 
--- The part of a player's saved data that drives income. Reset by rebirths (except keepOnRebirth tracks).
+-- The part of a player's saved data that drives income. A rebirth resets it (except rebirths/zone).
 export type Progress = {
 	zone: string,
 	rebirths: number,
@@ -49,8 +49,10 @@ for _, zone in Config.Zones.zones do
 end
 
 local raresById: { [string]: RareVariant } = {}
+local rareShare = 0
 for _, rare in Config.PackageTypes.rareVariants do
 	raresById[rare.id] = rare
+	rareShare += rare.chance
 end
 
 local typesByZone: { [string]: { PackageType } } = {}
@@ -109,6 +111,11 @@ end
 
 function Economy.findRare(rareId: string): RareVariant?
 	return raresById[rareId]
+end
+
+-- Share of spawned packages that are rare (sum of the fixed chances).
+function Economy.rareShare(): number
+	return rareShare
 end
 
 function Economy.level(progress: Progress, trackId: string): number
@@ -204,20 +211,7 @@ function Economy.packageTypeAt(zoneId: string, typeIndex: number): PackageType?
 	return nil
 end
 
--- Highest available zone the given rebirth count unlocks.
-function Economy.highestUnlockedZone(rebirths: number): string
-	local best = Config.Zones.startingZone
-	local bestOrder = Economy.getZone(best).order
-	for _, zone in Config.Zones.zones do
-		local unlocked = zone.unlock == nil or rebirths >= zone.unlock.rebirths
-		if zone.available and unlocked and zone.order > bestOrder then
-			best, bestOrder = zone.id, zone.order
-		end
-	end
-	return best
-end
-
--- Packages per minute arriving on one belt (all types together).
+-- Packages per minute the chutes put on one belt (all types together) while there is room.
 function Economy.supplyPerBelt(progress: Progress, passes: Passes?): number
 	local passBonus = if passes and passes.fastBelts then Config.Monetization.fastBeltsMultiplier else 1
 	return Config.Economy.spawnsPerMinute
@@ -263,14 +257,11 @@ function Economy.packageValue(progress: Progress, packageType: PackageType): num
 		* Economy.rebirthMultiplier(progress.rebirths)
 end
 
--- Multiplier on every cash gain from sorting: passes and the active boost.
+-- Multiplier on every cash gain from sorting: the 2x Cash pass and the active boost.
 function Economy.cashMultiplier(passes: Passes?, boostActive: boolean): number
 	local multiplier = 1
 	if passes and passes.doubleCash then
 		multiplier *= Config.Monetization.doubleCashMultiplier
-	end
-	if passes and passes.vip then
-		multiplier *= 1 + Config.Monetization.vipCashBonus
 	end
 	if boostActive then
 		multiplier *= Config.Economy.boostMultiplier
@@ -278,52 +269,129 @@ function Economy.cashMultiplier(passes: Passes?, boostActive: boolean): number
 	return multiplier
 end
 
--- Steady-state income estimate before cash multipliers. Machines take what they can (and earn only
--- their accuracy share); the manual rate goes to the most valuable leftovers.
--- Used for offline earnings, progress-scaled rewards and cash packs, and the balance simulation.
-function Economy.incomePerMinute(progress: Progress, manualSortsPerMinute: number?, passes: Passes?): IncomeBreakdown
-	local supply = Economy.supplyPerBelt(progress, passes)
-	local sorterRate = Economy.sorterRate(progress)
-	local accuracy = Economy.sorterAccuracy(progress)
-	local packageTypes = Economy.packageTypesForZone(progress.zone)
+type Segment = { manual: number, machines: number, hand: number }
 
+-- Pieces of one belt's intake curve. The chute pauses while the belt is full, so a belt only takes in
+-- what is removed: machines remove their type up to their rate, everything else (other types, machine
+-- overflow, rare packages) has to be sorted by hand. Taking in A packages per minute therefore needs
+-- manual capacity L(A); L is piecewise linear, so the curve is a list of segments, each with the manual
+-- capacity it needs and the machine / hand income it adds.
+local function beltSegments(progress: Progress, beltIndex: number, supply: number): { Segment }
+	local packageTypes = Economy.packageTypesForZone(progress.zone)
 	local totalWeight = 0
 	for _, packageType in packageTypes do
 		totalWeight += packageType.spawnWeight
 	end
-	if totalWeight <= 0 then
-		return { machinesPerMinute = 0, manualPerMinute = 0, totalPerMinute = 0 }
+	if totalWeight <= 0 or supply <= 0 then
+		return {}
+	end
+	local sorterRate = Economy.sorterRate(progress)
+	local accuracy = Economy.sorterAccuracy(progress)
+
+	local shares = {}
+	local averageValue = 0
+	for _, packageType in packageTypes do
+		local weight = packageType.spawnWeight / totalWeight
+		local value = Economy.packageValue(progress, packageType)
+		averageValue += weight * value
+		table.insert(shares, {
+			share = (1 - rareShare) * weight,
+			value = value,
+			rate = if Economy.hasSorter(progress, beltIndex, packageType.index) then sorterRate else 0,
+		})
 	end
 
-	local machines = 0
-	local leftovers: { { value: number, amount: number } } = {}
-	for _, belt in Economy.activeBelts(progress) do
-		for _, packageType in packageTypes do
-			local value = Economy.packageValue(progress, packageType)
-			local arriving = supply * packageType.spawnWeight / totalWeight
-			local automated = if Economy.hasSorter(progress, belt, packageType.index)
-				then math.min(arriving, sorterRate)
-				else 0
-			machines += automated * value * accuracy
-			table.insert(leftovers, { value = value, amount = arriving - automated })
+	local points = { 0, supply }
+	for _, entry in shares do
+		if entry.rate > 0 and entry.share > 0 then
+			local saturation = entry.rate / entry.share
+			if saturation < supply then
+				table.insert(points, saturation)
+			end
 		end
 	end
+	table.sort(points)
 
-	table.sort(leftovers, function(a, b)
-		return a.value > b.value
-	end)
-	local manualLeft = manualSortsPerMinute or 0
-	local manual = 0
-	for _, leftover in leftovers do
-		local taken = math.min(leftover.amount, manualLeft)
-		manual += taken * leftover.value
-		manualLeft -= taken
+	local segments = {}
+	for i = 1, #points - 1 do
+		local a0, a1 = points[i], points[i + 1]
+		local width = a1 - a0
+		if width > 1e-9 then
+			local middle = (a0 + a1) / 2
+			-- Rare packages are always sorted by hand; counted at an average value (their bonus is extra).
+			local manualSlope = rareShare
+			local handSlope = rareShare * averageValue
+			local machineSlope = 0
+			for _, entry in shares do
+				if entry.rate > 0 and entry.share * middle < entry.rate then
+					machineSlope += entry.share * entry.value * accuracy
+				else
+					manualSlope += entry.share
+					handSlope += entry.share * entry.value
+				end
+			end
+			table.insert(segments, {
+				manual = manualSlope * width,
+				machines = machineSlope * width,
+				hand = handSlope * width,
+			})
+		end
+	end
+	return segments
+end
+
+-- Steady-state income before cash multipliers. The player's manual rate goes where it earns the most:
+-- each belt's intake grows segment by segment, and the next piece of manual capacity always goes to the
+-- belt whose next segment pays the most per manual sort. Used for offline earnings, progress-scaled
+-- rewards and cash packs, and the balance simulation.
+function Economy.incomePerMinute(progress: Progress, manualSortsPerMinute: number?, passes: Passes?): IncomeBreakdown
+	local supply = Economy.supplyPerBelt(progress, passes)
+	local curves: { { Segment } } = {}
+	for _, beltIndex in Economy.activeBelts(progress) do
+		table.insert(curves, beltSegments(progress, beltIndex, supply))
+	end
+
+	local cursor: { number } = {}
+	for index in curves do
+		cursor[index] = 1
+	end
+	local remaining = manualSortsPerMinute or 0
+	local machines, hand = 0, 0
+	while remaining > 1e-12 do
+		local bestIndex: number? = nil
+		local bestScore = -1
+		for index, segments in curves do
+			local segment = segments[cursor[index]]
+			if segment then
+				local score = if segment.manual > 1e-12
+					then (segment.machines + segment.hand) / segment.manual
+					else math.huge
+				if score > bestScore then
+					bestIndex, bestScore = index, score
+				end
+			end
+		end
+		if bestIndex == nil then
+			break
+		end
+		local segment = curves[bestIndex][cursor[bestIndex]]
+		if segment.manual <= remaining then
+			remaining -= segment.manual
+			machines += segment.machines
+			hand += segment.hand
+			cursor[bestIndex] += 1
+		else
+			local fraction = remaining / segment.manual
+			machines += segment.machines * fraction
+			hand += segment.hand * fraction
+			remaining = 0
+		end
 	end
 
 	return {
 		machinesPerMinute = machines,
-		manualPerMinute = manual,
-		totalPerMinute = machines + manual,
+		manualPerMinute = hand,
+		totalPerMinute = machines + hand,
 	}
 end
 
@@ -333,14 +401,18 @@ function Economy.estimatedIncome(progress: Progress, passes: Passes?): number
 	return income.totalPerMinute * Economy.cashMultiplier(passes, false)
 end
 
--- Machine cash the collector holds before machines pause.
+-- Machine income per minute while the player plays normally (typical manual rate), with passes.
+function Economy.machineIncome(progress: Progress, passes: Passes?): number
+	local income = Economy.incomePerMinute(progress, Config.Economy.manualSortsPerMinute, passes)
+	return income.machinesPerMinute * Economy.cashMultiplier(passes, false)
+end
+
+-- Machine cash the cash register holds before machines pause.
 function Economy.collectorCapacity(progress: Progress, passes: Passes?): number
 	local collector = Config.Economy.collector
 	local minutes = collector.capacityMinutes
 		+ Economy.getTrack("collectorCapacity").effectPerLevel * Economy.level(progress, "collectorCapacity")
-	local machines = Economy.incomePerMinute(progress, 0, passes).machinesPerMinute
-		* Economy.cashMultiplier(passes, false)
-	return math.max(collector.minimumCapacity, math.floor(machines * minutes))
+	return math.max(collector.minimumCapacity, math.floor(Economy.machineIncome(progress, passes) * minutes))
 end
 
 function Economy.offlineCapHours(progress: Progress): number
@@ -348,15 +420,13 @@ function Economy.offlineCapHours(progress: Progress): number
 	return offline.baseCapHours + Economy.getTrack("offlineCap").effectPerLevel * Economy.level(progress, "offlineCap")
 end
 
--- Cash earned while away, from machines only, capped. Passes apply, boosts do not.
+-- Cash earned while away: a share of the machine income, capped. Passes apply, boosts do not.
 function Economy.offlineEarnings(progress: Progress, secondsAway: number, passes: Passes?): number
-	local offline = Config.Economy.offline
-	if secondsAway < offline.minimumSeconds then
+	if secondsAway <= 0 then
 		return 0
 	end
 	local cappedMinutes = math.min(secondsAway, Economy.offlineCapHours(progress) * 3600) / 60
-	local machines = Economy.incomePerMinute(progress, 0, passes).machinesPerMinute
-	return math.floor(machines * Economy.cashMultiplier(passes, false) * offline.efficiency * cappedMinutes)
+	return math.floor(Economy.machineIncome(progress, passes) * Config.Economy.offline.efficiency * cappedMinutes)
 end
 
 -- Cash granted by a progress-scaled reward or cash pack.
@@ -364,21 +434,12 @@ function Economy.cashPackAmount(incomePerMinute: number, incomeMinutes: number, 
 	return math.max(minimumCash, math.floor(incomePerMinute * incomeMinutes))
 end
 
--- Progress after a rebirth: cash-bought things reset, keepOnRebirth upgrades stay, the warehouse moves
--- to the highest unlocked zone.
+-- Progress after a rebirth: money and machines reset (all upgrades and purchases), rebirths + 1.
 function Economy.rebirth(progress: Progress): Progress
-	local rebirths = progress.rebirths + 1
-	local upgrades: { [string]: number } = {}
-	for trackId, level in progress.upgrades do
-		local track = Economy.findTrack(trackId)
-		if track and track.keepOnRebirth then
-			upgrades[trackId] = level
-		end
-	end
 	return {
-		zone = Economy.highestUnlockedZone(rebirths),
-		rebirths = rebirths,
-		upgrades = upgrades,
+		zone = progress.zone,
+		rebirths = progress.rebirths + 1,
+		upgrades = {},
 		purchases = {},
 	}
 end

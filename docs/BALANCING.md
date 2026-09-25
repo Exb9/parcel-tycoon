@@ -1,6 +1,6 @@
 # Balancing
 
-Stand: Phase 1 (25.09.2026). Alle Werte stehen in `src/shared/Config/`, die Formeln in
+Stand: 25.09.2026. Alle Werte stehen in `src/shared/Config/`, die Formeln in
 `src/shared/Economy.luau`. Balancing geht ohne Code-Änderung: Config anpassen, dann
 `lune run tests` (prüft die Ziele) bzw. `lune run tests/report` (zeigt den Verlauf).
 
@@ -11,20 +11,32 @@ werden Käufe im Lauf einer Runde langsam seltener, bis sich ein Rebirth lohnt.
 
 - **Wiederholbare Upgrades** (`Config/Upgrades.luau`):
   Preis der nächsten Stufe = `baseCost × growth ^ aktuelleStufe`, Wirkung = `1 + effectPerLevel × Stufe`.
-- **Einmalkäufe** (`Config/Purchases.luau`): Sortiermaschinen, zusätzliche Spawner-Schächte und
-  Bänder. Jeder Kauf wird erst nach seinem Vorgänger (`requires`) sichtbar, wie Tycoon-Buttons.
-  Preis ≈ 3–8 Minuten Einkommen zu dem Zeitpunkt, an dem er dran ist.
-- **Einkommen** (`Economy.incomePerMinute`): Pro Band kommen
-  `spawnsPerMinute × Spawner × Bandtempo` Pakete an, aufgeteilt nach `spawnWeight`. Eine Maschine
-  sortiert ihren Pakettyp bis `sorterBaseRate × Maschinentempo` pro Minute. Der Rest bleibt für
-  den Spieler, der die wertvollsten Pakete zuerst nimmt.
+- **Einmalkäufe** (`Config/Purchases.luau`): Sortiermaschinen, zusätzliche Rutschen und Bänder. Jeder
+  Kauf wird erst nach seinem Vorgänger (`requires`) sichtbar, wie Tycoon-Buttons. Preis ≈ 3–8 Minuten
+  Einkommen zu dem Zeitpunkt, an dem er dran ist.
 
 | Upgrade | Basis | Wachstum | Wirkung/Stufe | Max |
 |---|---|---|---|---|
 | Bandtempo | 12 | 1,15 | +10 % Pakete/min | 25 |
 | Größere Pakete | 18 | 1,16 | +15 % Wert | 60 |
 | Maschinentempo | 250 | 1,18 | +20 % Durchsatz | 30 |
-| Nachtschicht (Offline-Cap) | 5.000 | 6 | +2 h | 3 |
+| Maschinen-Genauigkeit | 400 | 2,2 | +3 % (Basis 85 %, max 100 %) | 5 |
+| Größere Kasse | 1.000 | 3 | +10 min Maschinengeld | 5 |
+| Nachtschicht (Offline-Deckel) | 5.000 | 6 | +2 h | 3 |
+
+| Kauf | Preis | Voraussetzung |
+|---|---|---|
+| Brief-Sortierer Band 1 | 200 | – |
+| Zweite Rutsche | 450 | – |
+| Karton-Sortierer Band 1 | 900 | Brief-Sortierer |
+| Kisten-Sortierer Band 1 | 2.500 | Karton-Sortierer |
+| Dritte Rutsche | 9.000 | Zweite Rutsche |
+| Band 2 | 17.000 | Band 1 voll automatisiert |
+| Sortierer Band 2 | 3.000 / 4.000 / 6.000 | Band 2 |
+| Band 3 | 60.000 | Band 2 voll automatisiert |
+| Sortierer Band 3 | 15.000 / 20.000 / 30.000 | Band 3 |
+| Band 4 (Pass „Bigger Warehouse“) | 40.000 | Band 2 voll automatisiert |
+| Sortierer Band 4 | 10.000 / 14.000 / 20.000 | Band 4 |
 
 | Paket (Zone 1) | Wert | Anteil |
 |---|---|---|
@@ -32,56 +44,79 @@ werden Käufe im Lauf einer Runde langsam seltener, bis sich ein Rebirth lohnt.
 | Box → Country | $6 | 35 % |
 | Crate → World | $12 | 15 % |
 
-Handsortieren: Annahme ~12 Pakete/min (≈ 5 s pro Paket inkl. Laufen). Das nutzt nur die Simulation.
+## Band-Modell: Rutsche pausiert (Entscheidung vom 25.09.2026)
 
-## Rebirth, Offline, Kasse
+Pakete laufen über das Band und stauen sich am Ende. Ist das Band bis zum Anfang voll, **pausiert die
+Rutsche**, es geht nichts verloren (`src/shared/BeltQueue.luau`). Ein Band nimmt also nur so viele Pakete
+auf, wie Maschinen und Spieler abräumen:
 
+- Pro Band kommen höchstens `spawnsPerMinute (14) × Rutschen × Bandtempo` Pakete pro Minute.
+- Eine Maschine nimmt ihren Pakettyp, wenn er bis zu 4 Studs vor oder hinter ihr vorbeikommt oder
+  wartet, mit `sorterBaseRate (9) × Maschinentempo` pro Minute. Seltene Pakete lässt sie liegen.
+- Alles andere (fremde Typen, Überlauf der Maschinen, seltene Pakete) muss der Spieler von Hand
+  sortieren. Steht er herum, staut sich das Band und auch die Maschinen stehen still. Das ist bewusst so
+  (aktives Spielen lohnt sich), Offline-Einnahmen rechnet der Code separat.
+- `Economy.incomePerMinute` bildet das ab: Pro Band ergibt sich eine stückweise lineare Kurve „wie viel
+  Handarbeit braucht welche Aufnahme“. Die Handrate (Annahme 12 Pakete/min ≈ 5 s pro Paket inkl.
+  Laufen) geht immer dorthin, wo sie am meisten bringt.
+- `tests/BeltSim.luau` spielt die Bänder Paket für Paket mit der echten Geometrie nach (48-Stud-Band,
+  Maschinen bei 12/20/28 Studs, Spieler holt in den letzten 14 Studs ab). Das Modell trifft die Simulation
+  auf 0,9–1,03 (`tests/belt.spec.luau`). Deshalb bitte das Referenz-Layout aus
+  [`MAP_CONTRACT.md`](MAP_CONTRACT.md) ungefähr einhalten.
+
+## Kasse, Genauigkeit, Offline, Rebirth
+
+- **Kasse**: Maschinen zahlen in die Kasse am Plot. Sie fasst 15 Minuten Maschineneinkommen (mindestens
+  $100, Upgrade +10 min je Stufe). Ist sie voll, pausieren die Maschinen, bis der Spieler drüberläuft.
+  Der Pass „Auto Collect“ bucht Maschinengeld direkt aufs Konto.
+- **Genauigkeit**: Maschinen sortieren 85 % richtig (Upgrade bis 100 %), Fehlsortierungen bringen nichts.
+- **Offline**: 30 % der Maschinenrate bei normalem Spiel, Deckel 2 h (Nachtschicht bis 8 h). Handarbeit
+  und Boosts zählen nicht.
 - **Rebirth**: erste Schwelle $150k, danach **×2** pro Rebirth; Bonus +50 % additiv (×1,5, ×2, ×2,5 …).
-  Im Vorschlag stand ×3. Die Simulation zeigte damit Runde 2/3 bei 77/94 min statt 45–75 min,
-  mit ×2 liegen die Runden 1–3 bei 66/59/62 min. Ab Runde 5 werden die Runden in Zone 1 allein
-  wieder länger (78, 96 min), weil der Inhalt ausgeht. Das fängt Zone 2 in Phase 6 auf.
-- **Offline**: 30 % der Maschinenrate, Deckel 2 h (Upgrade bis 8 h). Handsortieren zählt nicht.
-- **Kasse**: Maschinen zahlen in die Kasse am Plot, sie hört bei 15 Minuten Maschineneinkommen auf
-  zu füllen. Der Auto-Collect-Pass bucht direkt aufs Konto.
+  Setzt Geld, Upgrades und Käufe zurück, Pässe und Styles bleiben.
 
-## Seltene Pakete (Phase 5)
+## Seltene Pakete
 
-Golden (1/150, ×10), Zerbrechlich (1/80, ×4), Mysteriös (1/300, Zufallsbelohnung). Maschinen
-lassen sie liegen, nur Spieler sortieren sie. Das macht aktives Spielen um ~10 % lohnender als AFK.
-Die Chancen sind feste Config-Werte: Nichts, was man mit Robux oder (kaufbarem) Cash kauft, darf sie
-verändern, sonst wären es bezahlte Zufallsitems mit Chancen-Anzeige und PolicyService-Pflicht.
-Die Simulation rechnet ohne seltene Pakete (konservativ).
+Golden (1/200, ×10), Zerbrechlich (1/120, ×4, zerbricht bei Sprüngen oder Stürzen), Mysteriös (1/400,
+normaler Wert plus Überraschungs-Bonus: 60 % etwas Geld, 25 % viel Geld, 11 % 3 min 2x-Boost, 4 % Jackpot;
+die Chancen stehen im Info-Fenster). Maschinen lassen sie liegen, nur Spieler sortieren sie. Die Chancen
+sind feste Config-Werte: Nichts, was man mit Robux oder (kaufbarem) Cash kauft, darf sie verändern, sonst
+wären es bezahlte Zufallsitems mit Chancen-Anzeige und PolicyService-Pflicht.
 
 ## Monetarisierung und Kurve
 
-- Cash-Pakete geben „X Minuten des aktuellen Einkommens“ (15/60/240 min, mit Mindestbetrag),
-  skalieren also mit dem Fortschritt und brechen die Kurve nicht.
-- 2x Cash halbiert grob die Zeiten, nichts ist ohne Pass gesperrt.
-- Preise stehen nie in der Config (nur IDs): Die UI liest sie über `MarketplaceService:GetProductInfo`,
-  sonst funktionieren Roblox' Regional Pricing und Price Optimization nicht.
+- Cash-Pakete geben „X Minuten des aktuellen Einkommens“ (15/60/240 min, mit Mindestbetrag), skalieren
+  also mit dem Fortschritt und brechen die Kurve nicht. Tagesbelohnungen, Quests und Einladungen
+  funktionieren genauso.
+- 2x Cash verdoppelt Sortier-, Maschinen- und Offline-Geld, Fast Belts bringt +25 % Pakete. Nichts ist
+  ohne Pass gesperrt außer Band 4 („extra Plot-Platz“), das trotzdem mit Spielgeld gebaut wird.
+- Preise stehen nie in der Config (nur IDs): Die UI liest sie über
+  `MarketplaceService:GetProductInfoAsync`, sonst funktionieren Regional Pricing und Price Optimization
+  nicht.
 
 ## Simulation
 
-`tests/BalanceSim.luau` spielt einen kaufoptimierten Free-Spieler (ohne Pässe, ohne seltene
-Pakete): Er kauft immer die bezahlbare Option mit dem besten Einkommensgewinn pro Cash, wartet
-sonst darauf und spart für den Rebirth, sobald der höchstens 15 Minuten Einkommen entfernt ist oder
-der nächste sinnvolle Kauf mehr als 8 Minuten.
+`tests/BalanceSim.luau` spielt einen kaufoptimierten Free-Spieler (ohne Pässe und Boosts; seltene Pakete
+zählen nur mit dem Durchschnittswert eines normalen Pakets, ihr Bonus kommt obendrauf): Er plant zwei
+Käufe voraus, bewertet auch Ketten (z. B. neues Band plus seine Maschinen), wartet sonst auf den besten
+und spart für den Rebirth, sobald der höchstens 15 Minuten Einkommen entfernt ist oder der nächste
+sinnvolle Kauf mehr als 8 Minuten.
 
 Ergebnis mit den aktuellen Werten (`lune run tests/report`):
 
 | | Runde 1 | Runde 2 | Runde 3 |
 |---|---|---|---|
-| Erster Kauf | 16 s | 11 s | 8 s |
-| Erste Sortiermaschine | 3,7 min | 2,5 min | 1,9 min |
-| Band 1 voll automatisiert | 22,8 min | 15,2 min | 11,4 min |
-| Zweites Band | 42,7 min | 28,5 min | 21,4 min |
-| Band 2 voll automatisiert | 48,8 min | 32,6 min | 24,4 min |
-| Rebirth | 66,0 min | 59,2 min | 62,1 min |
-| Käufe in den ersten 5 min | 19 | 27 | 29 |
-| Einnahmen nach 15 min | $1.358/min | $3.236/min | $7.476/min |
-| Einnahmen nach 45 min | $6.054/min | $18.735/min | $31.268/min |
+| Erster Kauf | 18 s | 12 s | 6 s |
+| Erste Sortiermaschine | 4,8 min | 3,2 min | 2,4 min |
+| Band 1 voll automatisiert | 25,1 min | 16,7 min | 12,6 min |
+| Zweites Band | 35,4 min | 23,6 min | 17,7 min |
+| Band 2 voll automatisiert | 41,3 min | 27,6 min | 20,7 min |
+| Rebirth | 72,9 min | 65,5 min | 63,5 min |
+| Käufe in den ersten 5 min | 15 | 22 | 25 |
+| Einkommen nach 15 min | $847/min | $2.181/min | $4.448/min |
+| Einkommen nach 45 min | $5.356/min | $13.160/min | $35.046/min |
 
-`tests/balance.spec.luau` sichert diese Ziele mit Toleranz ab (erster Kauf ≤ 30 s, erste Maschine
-2–6 min, ≥ 12 Käufe in 5 min, längste Wartezeit in den ersten 15 min ≤ 3 min, Band 1 automatisiert
-nach 15–30 min, Band 2 nach 35–55 min, Rebirth-Runden 1–3 je 45–75 min). Wer ein Ziel bewusst
-ändert, passt Test und dieses Dokument zusammen an.
+`tests/balance.spec.luau` sichert die Ziele ab (erster Kauf ≤ 30 s, erste Maschine 2–6 min, ≥ 12 Käufe
+in 5 min, längste Wartezeit in den ersten 15 min ≤ 3 min, Band 1 automatisiert nach 15–30 min, Band 2 nach
+35–55 min, Rebirth-Runden 1–3 je 45–75 min). Wer ein Ziel bewusst ändert, passt Test und dieses Dokument
+zusammen an.

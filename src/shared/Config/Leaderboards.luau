@@ -1,18 +1,22 @@
 --!strict
 -- Global leaderboards (OrderedDataStore). Board parts live in Workspace.Lobby.Leaderboards (docs/MAP_CONTRACT.md).
 
+-- Board titles are texts "board.<id>" in GameText.csv (the title label built in Studio gets TextKey = "board.<id>").
+
 export type Board = {
 	id: string,
-	title: string,
 	-- Field in PlayerData.stats that is ranked.
 	stat: string,
+	-- OrderedDataStore name.
 	store: string,
+	-- How the value is shown: "cash" ($1.2M) or "number" (1.2M).
+	format: "cash" | "number",
 }
 
 local boards: { Board } = {
-	{ id = "TopEarned", title = "Top Earners", stat = "totalEarned", store = "LB_TotalEarned_v1" },
-	{ id = "TopRebirths", title = "Most Rebirths", stat = "rebirths", store = "LB_Rebirths_v1" },
-	{ id = "TopSorted", title = "Most Parcels Sorted", stat = "sortedTotal", store = "LB_Sorted_v1" },
+	{ id = "TopEarned", stat = "totalEarned", store = "LB_TotalEarned_v1", format = "cash" },
+	{ id = "TopRebirths", stat = "rebirths", store = "LB_Rebirths_v1", format = "number" },
+	{ id = "TopSorted", stat = "sortedTotal", store = "LB_Sorted_v1", format = "number" },
 }
 
 return {

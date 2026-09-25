@@ -10,17 +10,17 @@ return {
 		-- Belt surface speed at belt speed level 0; grows with the beltSpeed upgrade up to maxSpeed.
 		baseSpeed = 5,
 		maxSpeed = 14,
-		-- Space between queued packages.
+		-- Space between packages resting on the belt.
 		gap = 0.5,
-		-- Length of the queue at the end of the belt. Packages that do not fit fall into the recycling bin.
-		queueLength = 14,
-		-- Safety cap for packages on one belt.
+		-- Safety cap for packages on one belt. When the belt is full, the chute pauses (nothing is lost).
 		maxPackages = 30,
-		-- Packages a sorting machine can take in a burst: it earns one "token" per sort interval and holds
-		-- up to this many, so arrivals that bunch up are not missed (keeps real throughput close to
-		-- Economy.incomePerMinute, which assumes min(arrivals, rate)).
+		-- A sorting machine reaches this far along the belt on each side of its position: it takes a
+		-- matching package that passes it or waits in front of it.
+		sorterReach = 4,
+		-- Packages a sorting machine can take in a quick burst (smooths bunched-up arrivals so the real
+		-- throughput matches Economy.incomePerMinute). Internal, not an upgrade.
 		sorterBuffer = 3,
-		-- Seconds the remove animations (sorted/recycled) play before the part is destroyed.
+		-- Seconds the "sorted by a machine" animation plays before the part is removed.
 		leaveSeconds = 0.4,
 	},
 
@@ -36,8 +36,6 @@ return {
 		maxTravelSpeed = 40,
 		-- Minimum seconds between two grab requests.
 		grabCooldown = 0.25,
-		heavyWalkSpeedMultiplier = 0.7,
-		fragileWalkSpeedMultiplier = 0.8,
 		-- A fragile package breaks when the carrier moves up or down faster than this (jumping, falling).
 		fragileMaxVerticalSpeed = 18,
 		-- Grace period after grabbing before a fragile package can break.
@@ -46,9 +44,4 @@ return {
 
 	-- Horizontal distance to the cash register that collects it.
 	collectorRadius = 5,
-	-- Horizontal distance to the VIP gift pad that claims it.
-	vipGiftRadius = 5,
-
-	-- Characters spawn on their plot at this walk speed.
-	walkSpeed = 16,
 }

@@ -1,8 +1,12 @@
 --!strict
--- Greedy free-player simulation (no passes, no rare packages) used to check pacing targets.
--- The player always buys the affordable option with the best income gain per cash and waits for it
--- otherwise. They stop buying and save for the rebirth once it costs at most `rebirthWithinMinutes`
--- of income (the rebirth bar is "almost full"), or once the next useful purchase is more than
+-- Purchase-optimizing free-player simulation (no passes, no rare bonus) used to check pacing targets.
+--
+-- With the paused chute a single purchase can be worth nothing on its own (a second chute on a belt
+-- that is already as full as the player can clear) while two together pay off (a machine plus a chute).
+-- The player therefore plans two purchases ahead: they pick the single purchase or pair with the best
+-- income gain per cash, buy its first step when affordable and wait for it otherwise.
+-- They stop buying and save for the rebirth once it costs at most `rebirthWithinMinutes` of income
+-- (the rebirth bar is "almost full"), or once the next useful step is more than
 -- `savingThresholdMinutes` of income away (the upper end of one-off pricing).
 
 local Config = require("../src/shared/Config")
@@ -49,7 +53,8 @@ end
 
 local function apply(progress: Economy.Progress, option: Option, delta: number)
 	if option.kind == "track" then
-		progress.upgrades[option.id] = Economy.level(progress, option.id) + delta
+		local level = Economy.level(progress, option.id) + delta
+		progress.upgrades[option.id] = if level > 0 then level else nil
 	else
 		progress.purchases[option.id] = if delta > 0 then true else nil
 	end
@@ -59,19 +64,63 @@ local function income(progress: Economy.Progress, manual: number, passes: Econom
 	return Economy.incomePerMinute(progress, manual, passes).totalPerMinute * Economy.cashMultiplier(passes, false)
 end
 
--- Best income gain per cash among all options that raise income.
-local function bestOption(progress: Economy.Progress, manual: number, passes: Economy.Passes?): Option?
+-- One-off purchases unlocked by this one, in unlock order (a new belt and its machines).
+local function chainAfter(purchaseId: string, passes: Economy.Passes?): { Option }
+	local chain: { Option } = {}
+	local current = purchaseId
+	while true do
+		local nextPurchase = nil
+		for _, purchase in Config.Purchases.purchases do
+			if
+				purchase.requires == current
+				and (purchase.requiresPass == nil or (passes and passes[purchase.requiresPass]))
+			then
+				nextPurchase = purchase
+				break
+			end
+		end
+		if nextPurchase == nil or #chain >= 3 then
+			return chain
+		end
+		table.insert(chain, { kind = "purchase", id = nextPurchase.id, cost = nextPurchase.cost })
+		current = nextPurchase.id
+	end
+end
+
+-- Next purchase of the best plan (income gain per cash), or nil. Plans: a single step, any two steps,
+-- and a one-off followed by the purchases it unlocks (e.g. a belt with its machines).
+local function bestStep(progress: Economy.Progress, manual: number, passes: Economy.Passes?): Option?
 	local base = income(progress, manual, passes)
 	local best: Option? = nil
 	local bestScore = 0
-	for _, option in options(progress, passes) do
-		apply(progress, option, 1)
-		local gain = income(progress, manual, passes) - base
-		apply(progress, option, -1)
-		local score = gain / option.cost
-		if gain > 0 and score > bestScore then
-			best, bestScore = option, score
+	local function consider(first: Option, gain: number, cost: number)
+		if gain > 0 and gain / cost > bestScore then
+			best, bestScore = first, gain / cost
 		end
+	end
+	for _, first in options(progress, passes) do
+		apply(progress, first, 1)
+		consider(first, income(progress, manual, passes) - base, first.cost)
+		for _, second in options(progress, passes) do
+			apply(progress, second, 1)
+			consider(first, income(progress, manual, passes) - base, first.cost + second.cost)
+			apply(progress, second, -1)
+		end
+		if first.kind == "purchase" then
+			local cost = first.cost
+			local chain = chainAfter(first.id, passes)
+			for index, step in chain do
+				apply(progress, step, 1)
+				cost += step.cost
+				if index >= 2 then
+					consider(first, income(progress, manual, passes) - base, cost)
+				end
+			end
+			for index = #chain, 1, -1 do
+				apply(progress, chain[index], -1)
+			end
+		end
+		apply(progress, first, -1)
 	end
 	return best
 end
@@ -86,15 +135,15 @@ function BalanceSim.runCycle(opts: Options?): Cycle
 	local passes = o.passes
 	local progress = Economy.newProgress()
 	progress.rebirths = o.rebirths or 0
-	progress.zone = Economy.highestUnlockedZone(progress.rebirths)
 	local rebirthCost = Economy.rebirthCost(progress.rebirths)
 
 	local cycle: Cycle = { buys = {}, firstBought = {}, incomeByMinute = {}, rebirthSecond = nil }
 	local cash = Config.Economy.startingCash
 	local saving = false
+	local perMinute = income(progress, manual, passes)
+	local plan = bestStep(progress, manual, passes)
 
 	for second = 1, maxSeconds do
-		local perMinute = income(progress, manual, passes)
 		if second % 60 == 1 then
 			table.insert(cycle.incomeByMinute, perMinute)
 		end
@@ -109,22 +158,24 @@ function BalanceSim.runCycle(opts: Options?): Cycle
 		end
 
 		while not saving do
-			local option = bestOption(progress, manual, passes)
-			if not option then
+			local step = plan
+			if step == nil then
 				saving = true
 				break
 			end
-			if cash < option.cost then
+			if cash < step.cost then
 				-- Too far away: a real player would rather save up for the rebirth.
-				saving = (option.cost - cash) / (income(progress, manual, passes) / 60) > threshold
+				saving = perMinute <= 0 or (step.cost - cash) / (perMinute / 60) > threshold
 				break
 			end
-			cash -= option.cost
-			apply(progress, option, 1)
-			table.insert(cycle.buys, { second = second, id = option.id, cost = option.cost })
-			if cycle.firstBought[option.id] == nil then
-				cycle.firstBought[option.id] = second
+			cash -= step.cost
+			apply(progress, step, 1)
+			table.insert(cycle.buys, { second = second, id = step.id, cost = step.cost })
+			if cycle.firstBought[step.id] == nil then
+				cycle.firstBought[step.id] = second
 			end
+			perMinute = income(progress, manual, passes)
+			plan = bestStep(progress, manual, passes)
 		end
 	end
 

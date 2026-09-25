@@ -1,5 +1,5 @@
 --!strict
--- Core economy numbers: spawn and sorter rates, collector, offline earnings, boosts and rebirth.
+-- Core economy numbers: spawn and sorter rates, cash register, offline earnings, boosts and rebirth.
 -- See docs/BALANCING.md for the targets these values are tuned against.
 
 return {
@@ -12,7 +12,7 @@ return {
 	-- Share of packages a machine sorts correctly before accuracy upgrades; the rest earn nothing.
 	sorterBaseAccuracy = 0.85,
 	-- Balancing assumption for a young player sorting by hand (~5 s per package incl. walking).
-	-- Only the simulation and income estimates use it; in game the manual rate is whatever the player achieves.
+	-- Used by the simulation and income estimates; in game the manual rate is whatever the player achieves.
 	manualSortsPerMinute = 12,
 
 	-- Fraction of the package value subtracted for a wrong exit (0 = just no cash, package stays in hand).
@@ -31,11 +31,9 @@ return {
 		efficiency = 0.3,
 		-- Base cap; the "offlineCap" upgrade adds to it.
 		baseCapHours = 2,
-		-- Ignore very short absences (rejoins) so offline income is not farmed by reconnecting.
-		minimumSeconds = 120,
 	},
 
-	-- Multiplier of every cash boost (daily rewards, playtime gifts, VIP gift, boost product).
+	-- Multiplier of cash boosts (boost products, daily rewards, mystery bonus).
 	boostMultiplier = 2,
 
 	rebirth = {

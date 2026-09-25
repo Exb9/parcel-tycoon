@@ -1,0 +1,2 @@
+# Keep LF everywhere so StyLua, Selene and Rojo see the same files on Windows as in CI.
+* text=auto eol=lf

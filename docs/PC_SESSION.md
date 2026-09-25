@@ -12,13 +12,21 @@ Der Studio MCP ist in Studio eingebaut und läuft als lokaler Prozess per `stdio
 demselben PC. Eine Cloud-Session kommt nicht heran, auch wenn man sie in der Desktop-App öffnet, und es muss
 dafür auch kein Port freigegeben werden.
 
-1. Repo holen: `git pull` auf `main`, dann `rokit install` und `wally install`.
+1. Repo holen: `git pull` auf `main`, dann `rokit install` und `wally install`. Ist auch Aftman
+   installiert, muss `%USERPROFILE%\.rokit\bin` im PATH **vor** `%USERPROFILE%\.aftman\bin` stehen, sonst
+   fangen Aftmans Shims `wally`, `lune`, `selene` usw. ab („no aftman.toml files list this tool“).
 2. Studio: Assistant → … → Manage MCP Servers → **Enable Studio as MCP server**, darunter bei
    **Quick connect** „Claude Code“ einschalten. Ohne Quick connect per Befehl:
    `claude mcp add Roblox_Studio -- cmd.exe /c "%LOCALAPPDATA%\Roblox\mcp.bat"` (Windows) bzw.
    `claude mcp add Roblox_Studio -- /Applications/RobloxStudio.app/Contents/MacOS/StudioMCP` (Mac).
+   Nutzt man Claude Code nur über die Desktop-App, liegt `claude` nicht im PATH und Quick connect trägt
+   nichts ein. Dann den Befehl mit der mitgelieferten CLI im Repo-Ordner ausführen:
+   `& "$env:APPDATA\Claude\claude-code\<version>\claude.exe" mcp add --scope local Roblox_Studio -- cmd.exe /c "$env:LOCALAPPDATA\Roblox\mcp.bat"`
+   (PowerShell; in Git Bash würde `/c` zu einem Pfad umgeschrieben). `… mcp list` muss „Connected“ zeigen.
 3. Session auf dem PC starten: im Repo-Ordner `claude remote-control` (erscheint dann in der Claude-App)
-   oder einfach `claude`. Ein grüner Punkt unter „Enable Studio as MCP server“ heißt verbunden.
+   oder einfach `claude`, bzw. in der Desktop-App eine **neue** Session auf den Repo-Ordner. MCP-Server
+   lädt eine Session nur beim Start: Wer den Server erst während einer Session einträgt, braucht danach
+   eine neue. Ein grüner Punkt unter „Enable Studio as MCP server“ heißt verbunden.
    Startprompt: „Arbeite docs/PC_SESSION.md ab.“
 4. Neuen Place anlegen (Baseplate) und als **`place/ParcelTycoon.rbxlx`** speichern.
 5. `rojo serve` starten und im Rojo-Plugin verbinden. Danach liegen Code und

@@ -1,0 +1,19 @@
+# Wally
+/Packages/
+/ServerPackages/
+/DevPackages/
+
+# Generated
+sourcemap.json
+globalTypes.d.luau
+roblox.yml
+/build/
+
+# Studio lock/backup files (the place itself lives in place/)
+*.rbxl.lock
+*.rbxlx.lock
+*.rbxlx.bak
+
+# OS / editor
+.DS_Store
+Thumbs.db

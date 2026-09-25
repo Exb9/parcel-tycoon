@@ -1,0 +1,6 @@
+std = "roblox"
+exclude = ["Packages/*", "ServerPackages/*", "DevPackages/*"]
+
+[lints]
+# Luau type annotations make these redundant or noisy.
+shadowing = "allow"

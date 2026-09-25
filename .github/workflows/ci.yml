@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install toolchain (rokit.toml)
+        uses: CompeyDev/setup-rokit@v0.2.1
+
+      - name: Install Wally packages
+        run: wally install
+
+      - name: Sourcemap and package types
+        run: |
+          rojo sourcemap default.project.json --output sourcemap.json
+          if [ -d ServerPackages ]; then wally-package-types --sourcemap sourcemap.json ServerPackages/; fi
+          if [ -d Packages ]; then wally-package-types --sourcemap sourcemap.json Packages/; fi
+
+      - name: Format (StyLua)
+        run: stylua --check src tests
+
+      - name: Lint (Selene)
+        run: selene src tests
+
+      - name: Typecheck (luau-lsp)
+        run: |
+          curl -sSLo globalTypes.d.luau https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/1.70.0/scripts/globalTypes.None.d.luau
+          luau-lsp analyze --platform=roblox --sourcemap=sourcemap.json --definitions=@roblox=globalTypes.d.luau --base-luaurc=.luaurc src
+
+      - name: Tests and balancing (Lune)
+        run: lune run tests
+
+      - name: Build place
+        run: rojo build default.project.json --output build/ParcelTycoon.rbxlx

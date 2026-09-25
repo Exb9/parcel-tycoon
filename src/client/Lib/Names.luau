@@ -58,6 +58,10 @@ function Names.purchaseDescription(purchaseId: string): string
 end
 
 function Names.pass(key: string): string
+	local pass = Config.Monetization.gamepasses[key]
+	if pass and pass.cosmeticId then
+		return Text.get(`cosmetic.{pass.cosmeticId}`)
+	end
 	return Text.get(`pass.{key}.name`)
 end
 
@@ -66,10 +70,6 @@ function Names.cosmetic(cosmeticId: string): string
 end
 
 function Names.product(key: string): string
-	local product = Config.Monetization.products[key]
-	if product and product.kind == "cosmetic" and product.cosmeticId then
-		return Names.cosmetic(product.cosmeticId)
-	end
 	return Text.get(`product.{key}.name`)
 end
 

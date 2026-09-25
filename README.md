@@ -42,12 +42,16 @@ CI (`.github/workflows/ci.yml`) führt alles davon bei jedem Push aus.
 ```
 src/
   server/          init.server.luau lädt alle Module in Services/ (init, dann start)
-    Services/      Data, State, Plot, Cosmetic, Economy, Belt, Monetization, Quest, Reward,
-                   Leaderboard, Debug (nur Studio)
+    Services/      Data, State, Plot, Cosmetic, Economy, Belt, Monetization (Pässe, Produkte,
+                   Werbung, Club-Abo), Offer, Quest, Onboarding, Reward, Friends, Leaderboard,
+                   Debug (nur Studio)
     Lib/           Sessions, Events, RateLimit, Types
+    Codes.luau     einlösbare Codes (nur auf dem Server)
   client/          init.client.luau lädt alle Module in Controllers/
-    Controllers/   HUD, Fenster, Toasts, Paket-Animation, Greifen, Welt-Beschriftungen
-    Lib/           State, Text (Übersetzung), Ui (Bindung an die Studio-UI), Names, Sound
+    Controllers/   HUD, Fenster (Shop, Store, Quests, Daily, Rebirth, Style, Info, Angebot,
+                   Willkommen zurück, Codes), Toasts, Paket-Animation, Greifen, Welt-Beschriftungen
+    Lib/           State, Text (Übersetzung), Ui (Bindung an die Studio-UI), Names, Prices, AdsClient,
+                   Sound
   shared/          Config/ (Balancing, Inhalte, Monetarisierung), reine Logik (Economy, BeltQueue,
                    Quests, Rewards, DataSchema), Map- und UI-Vertrag, Net
   localization/    GameText.csv (Englisch + Deutsch) → LocalizationService.GameText

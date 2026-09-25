@@ -84,8 +84,14 @@ Halle, Modelle, Vorlagen, gesamte UI), baut die lokale Session per Studio MCP na
 - **UI per Studio MCP**: HUD, Fenster, Buttons, Toasts und Welt-UI baut die lokale Session in Studio.
   Der Client erzeugt keine UI, er bindet sich nur an die Namen aus
   [`docs/UI_CONTRACT.md`](docs/UI_CONTRACT.md) (Quelle: `src/shared/UiContract.luau`).
-- **Nur Brief-Inhalte**: Gebaut wird, was hier im Brief oder in festgehaltenen Entscheidungen steht.
-  Keine eigenen Features, Mechaniken oder Belohnungen; bei Unklarheit fragen.
+- **Eigene Features erwünscht** (Nutzer, 25.09.2026), auch solche, die zum Kaufen anregen – fair für
+  Free-Spieler, keine Paid Random Items, kein Druck und keine falschen Timer bei Kindern, per Config
+  abschaltbar, bestehende Entscheidungen bleiben. Der Kern der früheren Kritik war die per Code gebaute
+  Map, nicht eigene Features.
+- **Feature-Paket 25.09.2026**: Tycoon-Bundle, Flitzeschuhe, Styles als Gamepässe, Starterpaket,
+  Boosts, Auto Collect auf Zeit, Offline-Geld verdoppeln, Rewarded-Video-Werbung (3 Platzierungen mit
+  Tageslimit), Paket-Club-Abo, Angebots-Popups im passenden Moment, Tutorial, Spielzeit-Geschenke,
+  Codes, Gruppen- und Freunde-Bonus, Rebirth-Meilensteine (Details in `docs/BALANCING.md`).
 - **Sortieren = Tragen**: Paket antippen → Avatar trägt es → Ausgang berühren. Server prüft
   Distanz zu Paket und Ausgang, Cooldown und Besitz (`Config.Gameplay`).
 - **Offene Brief-Punkte geklärt**: Maschinen-„Kapazität“ = Kassen-Kapazität (Maschinengeld sammelt
@@ -117,6 +123,9 @@ Halle, Modelle, Vorlagen, gesamte UI), baut die lokale Session per Studio MCP na
   alle Texte in `src/localization/GameText.csv` (Rojo → `LocalizationService.GameText`), feste
   UI-Texte per `TextKey`-Attribut, der Server schickt nur Schlüssel und IDs.
 - Nach Änderungen an `src/shared/UiContract.luau`: `lune run tools/ui-contract-doc`.
+- Codes liegen serverseitig in `src/server/Codes.luau` (ReplicatedStorage ist für Clients lesbar).
+- Werbe-Buttons nennen immer Werbung und Belohnung (TextKeys `ads.*`); Werbung nur freiwillig, nie als
+  Fortschritts-Sperre (Roblox-Richtlinie).
 - Aus den Schwesterprojekten übernommen:
   - Studio MCP braucht in Studio „Assistant → … → Manage MCP Servers → Enable Studio as MCP server“.
     `list_roblox_studios` kann direkt nach dem Verbinden kurz leer sein.

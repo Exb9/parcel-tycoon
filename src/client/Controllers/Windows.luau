@@ -13,11 +13,15 @@ local Windows = {}
 -- Fires with the window name after it opened.
 Windows.opened = Signal.new() :: Signal.Signal<string>
 
-local screen: ScreenGui? = nil
 local current: string? = nil
 
+-- Looked up on demand: other controllers call Windows.get from their init(), which may run before ours.
+local function screen(): ScreenGui?
+	return Ui.screen("Windows")
+end
+
 function Windows.get(name: string): GuiObject?
-	return Ui.object(screen, name)
+	return Ui.object(screen(), name)
 end
 
 function Windows.isOpen(name: string): boolean
@@ -26,7 +30,7 @@ end
 
 function Windows.close()
 	if current then
-		Ui.setVisible(screen, current, false)
+		Ui.setVisible(screen(), current, false)
 		current = nil
 	end
 end
@@ -39,7 +43,7 @@ function Windows.open(name: string)
 	if Windows.get(name) == nil then
 		return
 	end
-	Ui.setVisible(screen, name, true)
+	Ui.setVisible(screen(), name, true)
 	current = name
 	Windows.opened:Fire(name)
 end
@@ -75,10 +79,10 @@ function Windows.tabs(windowName: string, tabNames: { string }, onSelect: ((tabN
 end
 
 function Windows.init()
-	screen = Ui.screen("Windows")
+	local windows = screen()
 	for _, name in UiContract.windows do
-		Ui.setVisible(screen, name, false)
-		Ui.onActivated(Ui.button(screen, `{name}/Close`), Windows.close)
+		Ui.setVisible(windows, name, false)
+		Ui.onActivated(Ui.button(windows, `{name}/Close`), Windows.close)
 	end
 end
 

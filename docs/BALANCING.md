@@ -94,6 +94,28 @@ wären es bezahlte Zufallsitems mit Chancen-Anzeige und PolicyService-Pflicht.
   `MarketplaceService:GetProductInfoAsync`, sonst funktionieren Regional Pricing und Price Optimization
   nicht.
 
+## Boni, Werbung, Angebote und Gratis-Belohnungen
+
+Alles in `Config.Monetization` und `Config.Rewards`, jedes Feature per Config abschaltbar.
+
+- **Boni** addieren sich: Freunde auf dem Server +10 % je Freund (höchstens +30 %), Gruppe +10 %,
+  Paket-Club +20 %, zusammen höchstens +60 %. Darauf wirken 2x Cash und der Boost (je ×2). Die
+  Simulation rechnet ohne Boni (Einzelspieler ohne Gruppe).
+- **Rewarded Video** (freiwillig, mit Hinweis auf dem Button): 2x Cash für 10 min (5-mal am Tag), Auto
+  Collect für 15 min (3-mal), Offline-Geld verdoppeln (3-mal). Jede Belohnung gibt es auch für Robux
+  (Roblox-Regel für Werbebelohnungen).
+- **Starterpaket** (einmal pro Spieler): 30 min Einkommen (mind. $2.500), 30 min 2x Cash und die
+  Goldenen Bänder. Wird nach der ersten Maschine einmal pro Sitzung angeboten und steht im Store.
+- **Tycoon-Bundle**: 2x Cash + Auto Collect + Fast Belts in einem Pass (im Creator Hub günstiger bepreisen
+  als die drei einzeln).
+- **Flitzeschuhe**: Laufgeschwindigkeit 16 → 24, also kürzere Wege zwischen Band und Rutschen (bleibt
+  unter der Anti-Teleport-Grenze von 40 Studs/s).
+- **Spielzeit-Geschenke** pro Tag nach 3/8/15/25/40 Minuten: kleine Geld- und Boost-Belohnungen, passend
+  zu Sitzungen ab 10 Minuten (Creator Rewards).
+- **Rebirth-Meilensteine**: Rebirth 1 (Bonbon-Halle + Geld), 3 (Glas-Pakete + Geld), 5 (Sternen-Spur +
+  30 min Boost), 10 (60 min Einkommen).
+- **Tutorial**: $250 am Ende. **Codes** und **Gruppe**: kleine Geld-/Boost-Belohnungen.
+
 ## Simulation
 
 `tests/BalanceSim.luau` spielt einen kaufoptimierten Free-Spieler (ohne Pässe und Boosts; seltene Pakete

@@ -99,6 +99,8 @@ local function apply(instance: Instance)
 	end
 	if instance:IsA("TextLabel") or instance:IsA("TextButton") then
 		(instance :: any).Text = Text.get(key)
+	elseif instance:IsA("TextBox") then
+		instance.PlaceholderText = Text.get(key)
 	end
 end
 

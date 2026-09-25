@@ -126,11 +126,15 @@ PackageTemplate (Part)
 
 ```
 CosmeticTemplates (Folder)
-└─ trailRainbow (Trail)          Regenbogen-Spur; Farben, Lifetime, Breite frei gestalten
+├─ trailRainbow (Trail)          Regenbogen-Spur (Gamepass)
+├─ trailClub (Trail)             Club-Spur (Paket-Club-Abo), z. B. in den Club-Farben
+└─ trailStar (Trail)             Sternen-Spur (Belohnung für Rebirth 5), z. B. goldgelb mit Funkeln
 ```
 
-Der Code klont die Trail-Vorlage an den Charakter des Spielers und setzt die beiden Attachments.
-Band-, Paket- und Hallen-Skins brauchen keine Vorlage (Farbe/Material aus `Config.Cosmetics`).
+Farben, Lifetime, Breite und Textur frei gestalten. Der Code klont die Trail-Vorlage an den Charakter des
+Spielers und setzt die beiden Attachments. Band-, Paket- und Hallen-Skins brauchen keine Vorlage
+(Farbe/Material aus `Config.Cosmetics`: Neon-, Gold-Bänder, glänzende und Glas-Pakete, Party- und
+Bonbon-Halle).
 
 ## Place-Einstellungen
 

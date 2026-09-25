@@ -169,6 +169,8 @@ local function matches(instance: Instance, kind: UiContract.Kind): boolean
 		return Ui.textTarget(instance) ~= nil
 	elseif kind == "Image" then
 		return instance:IsA("ImageLabel") or instance:IsA("ImageButton")
+	elseif kind == "TextBox" then
+		return instance:IsA("TextBox")
 	end
 	return false
 end

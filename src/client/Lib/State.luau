@@ -13,6 +13,8 @@ export type Cash = {
 	collector: number,
 	collectorCapacity: number,
 	income: number,
+	-- Additive bonus from friends, group and club (0.2 = +20 %).
+	bonus: number?,
 	multiplier: number,
 	autoCollect: boolean,
 }
@@ -23,6 +25,7 @@ export type Progress = {
 	upgrades: { [string]: number },
 	purchases: { [string]: boolean },
 	rebirthCost: number,
+	milestones: { [string]: boolean }?,
 }
 
 export type Quests = { day: number, daily: { DataSchema.QuestState }, secondsToReset: number }

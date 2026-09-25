@@ -37,4 +37,6 @@ jobs:
         run: lune run tests
 
       - name: Build place
-        run: rojo build default.project.json --output build/ParcelTycoon.rbxlx
+        run: |
+          mkdir -p build
+          rojo build default.project.json --output build/ParcelTycoon.rbxlx

@@ -26,7 +26,7 @@ zwischen Studio-Map und Code in [`docs/MAP_CONTRACT.md`](docs/MAP_CONTRACT.md).
 | Typprüfung | `rojo sourcemap default.project.json -o sourcemap.json` und `luau-lsp analyze --platform=roblox --sourcemap=sourcemap.json --definitions=@roblox=globalTypes.d.luau --base-luaurc=.luaurc src` (Definitionsdatei siehe CI) |
 | Tests + Balancing-Ziele | `lune run tests` |
 | Balancing-Verlauf anzeigen | `lune run tests/report` |
-| Place bauen (nur Code) | `rojo build default.project.json -o build/ParcelTycoon.rbxlx` |
+| Place bauen (nur Code) | `mkdir -p build` und `rojo build default.project.json -o build/ParcelTycoon.rbxlx` |
 
 CI (`.github/workflows/ci.yml`) führt alles davon bei jedem Push aus.
 

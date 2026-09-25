@@ -28,6 +28,11 @@
 					"$path": "src/client"
 				}
 			}
+		},
+		"LocalizationService": {
+			"GameText": {
+				"$path": "src/localization/GameText.csv"
+			}
 		}
 	}
 }

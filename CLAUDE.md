@@ -64,11 +64,16 @@ Roblox-Spieler. Das Spiel soll sich gut monetarisieren lassen, aber fair bleiben
 ## Vorgehen (in Phasen, nach jeder Phase stoppen und berichten)
 1. **Setup**: Rojo-Projekt, Wally, Linting, Ordnerstruktur, Git, Config-Module. ✅
 2. **MVP**: ein Plot, ein Band, drei Pakettypen, manuelles Sortieren,
-   Geld + Speichern. Map mit Platzhalter-Parts über Studio MCP.
-3. **Upgrades & erste Maschine**, Shop-UI.
-4. **Monetarisierung**: Gamepasses + Developer Products (mit Test-IDs in Config).
-5. **Rebirth, seltene Pakete, Quests, Daily Rewards, Leaderboards**.
+   Geld + Speichern. Map mit Platzhalter-Parts über Studio MCP. Code ✅, Studio-Teil offen
+3. **Upgrades & erste Maschine**, Shop-UI. Code ✅, UI per Studio MCP offen
+4. **Monetarisierung**: Gamepasses + Developer Products (mit Test-IDs in Config). Code ✅
+5. **Rebirth, seltene Pakete, Quests, Daily Rewards, Leaderboards**. Code ✅, Studio-Teil offen
 6. **Zweite Zone**, danach Balancing-Pass.
+
+Stand 25.09.2026: Der Code für Phase 2–5 ist fertig und getestet. Was in Studio entstehen muss (Map,
+Halle, Modelle, Vorlagen, gesamte UI), baut die lokale Session per Studio MCP nach
+[`docs/PC_SESSION.md`](docs/PC_SESSION.md), [`docs/MAP_CONTRACT.md`](docs/MAP_CONTRACT.md) und
+[`docs/UI_CONTRACT.md`](docs/UI_CONTRACT.md).
 
 ## Entscheidungen (Stand 25.09.2026, Details im homelab-Connector)
 - **Map per Studio MCP**: Map, Lagerhalle und Plot-Template entstehen in Studio und liegen im
@@ -76,8 +81,17 @@ Roblox-Spieler. Das Spiel soll sich gut monetarisieren lassen, aber fair bleiben
   Code findet Map-Teile nur über [`docs/MAP_CONTRACT.md`](docs/MAP_CONTRACT.md).
   Der Studio MCP läuft lokal per stdio: Map-Arbeit braucht eine lokale Session auf dem PC,
   Cloud-Sessions machen nur Code.
+- **UI per Studio MCP**: HUD, Fenster, Buttons, Toasts und Welt-UI baut die lokale Session in Studio.
+  Der Client erzeugt keine UI, er bindet sich nur an die Namen aus
+  [`docs/UI_CONTRACT.md`](docs/UI_CONTRACT.md) (Quelle: `src/shared/UiContract.luau`).
+- **Nur Brief-Inhalte**: Gebaut wird, was hier im Brief oder in festgehaltenen Entscheidungen steht.
+  Keine eigenen Features, Mechaniken oder Belohnungen; bei Unklarheit fragen.
 - **Sortieren = Tragen**: Paket antippen → Avatar trägt es → Ausgang berühren. Server prüft
   Distanz zu Paket und Ausgang, Cooldown und Besitz (`Config.Gameplay`).
+- **Offene Brief-Punkte geklärt**: Maschinen-„Kapazität“ = Kassen-Kapazität (Maschinengeld sammelt
+  sich in der Kasse, volle Kasse pausiert die Maschinen). „Extra Plot-Platz“ = 4. Band, das mit
+  Spielgeld gebaut wird. Band voll = die Rutsche pausiert, nichts geht verloren (Stau bei AFK ist
+  gewollt, Offline-Einnahmen rechnet der Code separat).
 - **Kein Premium-Bonus**: Premium Payouts wurden am 24.07.2025 durch Creator Rewards ersetzt
   (5 R$/Tag pro Active Spender, der das Spiel als eines der ersten 3 am Tag ≥ 10 Min spielt,
   plus 35 % Umsatzanteil für neue/reaktivierte Nutzer über den Share-Link). Daily Rewards und Quests
@@ -85,9 +99,9 @@ Roblox-Spieler. Das Spiel soll sich gut monetarisieren lassen, aber fair bleiben
 - **Seltene Pakete: feste Chancen**: Cash ist per Dev Product kaufbar und damit „paid currency“.
   Nichts, was man mit Robux oder Cash kauft, darf Chancen auf seltene Pakete ändern (sonst PRI).
   Boosts wirken nur auf Cash/Tempo.
-- **Preise nie hart codieren**: Die UI liest Preise über `MarketplaceService:GetProductInfo`
+- **Preise nie hart codieren**: Die UI liest Preise über `MarketplaceService:GetProductInfoAsync`
   (Regional Pricing / Price Optimization). Die Config enthält nur IDs (0 = noch nicht angelegt).
-- **Balancing**: exponentielle Kosten, lineare Wirkung, Greedy-Simulation als Test
+- **Balancing**: exponentielle Kosten, lineare Wirkung, Kauf-Simulation mit Stau-Modell als Test
   ([`docs/BALANCING.md`](docs/BALANCING.md)). Rebirth-Schwelle ×2 statt ×3 (Simulation).
 - **Maschinen lassen seltene Pakete liegen**, damit aktives Spielen mehr bringt als AFK.
 - **Toolchain**: Rokit statt Aftman.
@@ -99,7 +113,10 @@ Roblox-Spieler. Das Spiel soll sich gut monetarisieren lassen, aber fair bleiben
 - Services (`src/server/Services`) und Controller (`src/client/Controllers`) exportieren optional
   `init()` (synchron) und `start()` (eigener Thread).
 - Farben in der Config als Hex-Strings, Größen als `{x, y, z}` (bleibt reine Daten).
-- Doku für den Nutzer (`docs/*.md`) auf Deutsch; Spiel-UI Englisch mit Localization-Table (DE).
+- Doku für den Nutzer (`docs/*.md`) auf Deutsch; Spiel-UI Englisch mit Localization-Table (DE):
+  alle Texte in `src/localization/GameText.csv` (Rojo → `LocalizationService.GameText`), feste
+  UI-Texte per `TextKey`-Attribut, der Server schickt nur Schlüssel und IDs.
+- Nach Änderungen an `src/shared/UiContract.luau`: `lune run tools/ui-contract-doc`.
 - Aus den Schwesterprojekten übernommen:
   - Studio MCP braucht in Studio „Assistant → … → Manage MCP Servers → Enable Studio as MCP server“.
     `list_roblox_studios` kann direkt nach dem Verbinden kurz leer sein.

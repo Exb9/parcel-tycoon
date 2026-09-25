@@ -1,0 +1,150 @@
+Key,Source,Context,Example,de
+hud.perMinute,{amount}/min,,,{amount}/Min
+hud.boost,2x Cash {time},,,2x Geld {time}
+hud.carry,Take it to {destination}!,,,Bring es zu {destination}!
+hud.carryFragile,Fragile! Don't jump.,,,Zerbrechlich! Nicht springen.
+hud.collectorFull,Cash register full!,,,Kasse voll!
+menu.shop,Shop,,,Shop
+menu.store,Store,,,Store
+menu.quests,Quests,,,Quests
+menu.daily,Daily,,,Täglich
+menu.rebirth,Rebirth,,,Rebirth
+menu.style,Style,,,Style
+menu.invite,Invite,,,Einladen
+menu.info,Info,,,Info
+shop.title,Shop,,,Shop
+shop.tabUpgrades,Upgrades,,,Upgrades
+shop.tabMachines,Machines,,,Maschinen
+shop.level,Level {level}/{max},,,Stufe {level}/{max}
+shop.max,MAX,,,MAX
+shop.buy,Buy,,,Kaufen
+shop.allBuilt,Everything is built! Time for a rebirth?,,,Alles gebaut! Zeit für einen Rebirth?
+shop.needsPass,Needs {pass},,,Braucht {pass}
+upgrade.beltSpeed.name,Belt Speed,,,Bandtempo
+upgrade.beltSpeed.desc,+10% parcels on every belt,,,+10% Pakete auf jedem Band
+upgrade.packageValue.name,Bigger Parcels,,,Größere Pakete
+upgrade.packageValue.desc,+15% cash per parcel,,,+15% Geld pro Paket
+upgrade.sorterSpeed.name,Machine Speed,,,Maschinentempo
+upgrade.sorterSpeed.desc,Machines sort 20% faster,,,Maschinen sortieren 20% schneller
+upgrade.sorterAccuracy.name,Machine Accuracy,,,Maschinen-Genauigkeit
+upgrade.sorterAccuracy.desc,Machines sort {percent} correctly,,,Maschinen sortieren {percent} richtig
+upgrade.collectorCapacity.name,Bigger Cash Register,,,Größere Kasse
+upgrade.collectorCapacity.desc,Holds 10 more minutes of machine cash,,,Hält 10 Minuten mehr Maschinengeld
+upgrade.offlineCap.name,Night Shift,,,Nachtschicht
+upgrade.offlineCap.desc,Machines earn 2 more hours while you are away,,,"Maschinen verdienen 2 Stunden länger, wenn du weg bist"
+purchase.sorter,{type} Sorter,,,{type}-Sortierer
+purchase.sorterBelt,{type} Sorter (Belt {belt}),,,{type}-Sortierer (Band {belt})
+purchase.spawner2,Second Chute,,,Zweite Rutsche
+purchase.spawner3,Third Chute,,,Dritte Rutsche
+purchase.belt,Belt {belt},,,Band {belt}
+purchase.sorter.desc,Sorts {type} parcels automatically,,,Sortiert {type}-Pakete automatisch
+purchase.spawner.desc,More parcels on every belt,,,Mehr Pakete auf jedem Band
+purchase.belt.desc,A new belt with its own parcels,,,Ein neues Band mit eigenen Paketen
+package.letter,Letter,,,Brief
+package.box,Box,,,Karton
+package.crate,Crate,,,Kiste
+dest.letter,TOWN,,,STADT
+dest.box,COUNTRY,,,LAND
+dest.crate,WORLD,,,WELT
+rare.golden,GOLDEN,,,GOLDEN
+rare.fragile,FRAGILE,,,ZERBRECHLICH
+rare.mystery,?,,,?
+zone.postOffice,Post Office,,,Postamt
+zone.airportCargo,Airport Cargo,,,Flughafen-Cargo
+zone.spaceHub,Space Hub,,,Weltraum-Hub
+store.title,Store,,,Store
+store.passes,Passes,,,Pässe
+store.products,Cash & Boosts,,,Geld & Boosts
+store.styles,Styles,,,Styles
+store.owned,Owned,,,Gekauft
+store.soon,Soon,,,Bald
+store.test,Test,,,Test
+store.noMachine,No machine to build right now,,,Gerade keine Maschine zum Bauen
+pass.doubleCash.name,2x Cash,,,2x Geld
+pass.doubleCash.desc,Doubles all cash you earn.,,,Verdoppelt all dein Geld.
+pass.autoCollect.name,Auto Collect,,,Auto-Einsammeln
+pass.autoCollect.desc,Machine cash goes straight to you. No cash register limit.,,,Maschinengeld kommt direkt zu dir. Kein Kassen-Limit.
+pass.vip.name,VIP,,,VIP
+pass.vip.desc,Opens the VIP area.,,,Öffnet den VIP-Bereich.
+pass.fastBelts.name,Fast Belts,,,Schnelle Bänder
+pass.fastBelts.desc,25% more parcels on every belt.,,,25% mehr Pakete auf jedem Band.
+pass.biggerWarehouse.name,Bigger Warehouse,,,Größere Halle
+pass.biggerWarehouse.desc,Unlocks a fourth belt you can build with cash.,,,"Schaltet ein viertes Band frei, das du mit Geld baust."
+product.cashSmall.name,Cash Stack,,,Geldstapel
+product.cashMedium.name,Cash Bag,,,Geldsack
+product.cashLarge.name,Cash Truck,,,Geldtransporter
+product.cash.desc,Get {amount} now,,,Sofort {amount}
+product.cashBoost.name,2x Cash Boost,,,2x-Geld-Boost
+product.cashBoost.desc,Double cash for {minutes} minutes,,,Doppeltes Geld für {minutes} Minuten
+product.instantMachine.name,Instant Machine,,,Sofort-Maschine
+product.instantMachine.desc,Builds your next sorting machine: {name},,,Baut deine nächste Sortiermaschine: {name}
+product.cosmetic.desc,Unlock forever,,,Für immer freischalten
+cosmetic.trailRainbow,Rainbow Trail,,,Regenbogen-Spur
+cosmetic.beltNeon,Neon Belts,,,Neon-Bänder
+cosmetic.packageShiny,Shiny Parcels,,,Glänzende Pakete
+cosmetic.warehouseParty,Party Warehouse,,,Party-Halle
+quests.title,Daily Quests,,,Tägliche Quests
+quests.claim,Claim,,,Abholen
+quests.claimed,Done,,,Erledigt
+quests.newIn,New quests in {time},,,Neue Quests in {time}
+quests.reward,Reward: {amount},,,Belohnung: {amount}
+quest.sortManual,Sort {target} parcels by hand,,,Sortiere {target} Pakete von Hand
+quest.sortType,Sort {target} {type} parcels,,,Sortiere {target} {type}-Pakete
+quest.sortMachine,Machines sort {target} parcels,,,Maschinen sortieren {target} Pakete
+quest.sortRare,Sort {target} rare parcel,,,Sortiere {target} seltenes Paket
+quest.earn,Earn {amount},,,Verdiene {amount}
+quest.buyUpgrades,Buy {target} upgrades,,,Kaufe {target} Upgrades
+quest.collect,Empty your cash register {target}x,,,Leere deine Kasse {target}x
+daily.title,Daily Rewards,,,Tägliche Belohnungen
+daily.day,Day {day},,,Tag {day}
+daily.claim,Claim,,,Abholen
+daily.comeBack,Come back tomorrow for the next reward!,,,Komm morgen für die nächste Belohnung wieder!
+daily.boost,2x Cash {minutes} min,,,2x Geld {minutes} Min
+rebirth.title,Rebirth,,,Rebirth
+rebirth.desc,Start over with a permanent income bonus.,,,Fang neu an mit einem dauerhaften Einkommensbonus.
+rebirth.cost,Needs {amount},,,Braucht {amount}
+rebirth.bonus,Income x{from} -> x{to},,,Einkommen x{from} -> x{to}
+rebirth.keep,"Your cash, upgrades and machines reset. You keep passes and styles.",,,"Geld, Upgrades und Maschinen werden zurückgesetzt. Pässe und Styles bleiben."
+rebirth.button,Rebirth!,,,Rebirth!
+style.title,Style,,,Style
+style.trail,Trails,,,Spuren
+style.belt,Belts,,,Bänder
+style.package,Parcels,,,Pakete
+style.warehouse,Warehouse,,,Halle
+style.equip,Use,,,Nutzen
+style.equipped,In use,,,Aktiv
+style.empty,No styles yet. Get some in the Store!,,,Noch keine Styles. Hol dir welche im Store!
+info.title,How to play,,,So wird gespielt
+info.text,Pick up parcels on the belt and carry them to the chute with the same color. Buy upgrades and sorting machines in the Shop. Machines put cash into your cash register: walk over it to collect.,,,Heb Pakete vom Band auf und bring sie zur Rutsche mit der gleichen Farbe. Im Shop kaufst du Upgrades und Sortiermaschinen. Maschinen legen Geld in deine Kasse: lauf drüber zum Einsammeln.
+info.rare,"Rare parcels: Golden (10x cash), Fragile (4x cash, don't jump!), Mystery (a bonus surprise).",,,"Seltene Pakete: Golden (10x Geld), Zerbrechlich (4x Geld, nicht springen!), Überraschung (ein Bonus)."
+info.mysteryOdds,Mystery bonus odds,,,Chancen für den Überraschungs-Bonus
+reward.smallCash,Some cash,,,Etwas Geld
+reward.bigCash,Lots of cash,,,Viel Geld
+reward.boost,2x Cash boost,,,2x-Geld-Boost
+reward.jackpot,Jackpot,,,Jackpot
+toast.sorted,+{amount},,,+{amount}
+toast.wrong,Wrong chute! Find {destination}.,,,Falsche Rutsche! Such {destination}.
+toast.broken,Oops! The fragile parcel broke.,,,Hoppla! Das zerbrechliche Paket ist kaputt.
+toast.golden,Golden parcel! +{amount},,,Goldenes Paket! +{amount}
+toast.mystery,Mystery bonus: +{amount}!,,,Überraschungs-Bonus: +{amount}!
+toast.collected,Collected {amount},,,{amount} eingesammelt
+toast.collectorFull,Your cash register is full. Collect it!,,,Deine Kasse ist voll. Sammle sie ein!
+toast.bought,Bought: {name},,,Gekauft: {name}
+toast.notEnough,Not enough cash,,,Nicht genug Geld
+toast.questDone,Quest complete!,,,Quest geschafft!
+toast.offline,Welcome back! Your machines earned {amount}.,,,Willkommen zurück! Deine Maschinen haben {amount} verdient.
+toast.boost,2x Cash for {minutes} min!,,,2x Geld für {minutes} Min!
+toast.cash,+{amount},,,+{amount}
+toast.cosmetic,New style: {name},,,Neuer Style: {name}
+toast.rebirth,Rebirth! Your income is now x{multiplier},,,Rebirth! Dein Einkommen ist jetzt x{multiplier}
+toast.simulated,Studio test purchase: {name},,,Studio-Testkauf: {name}
+toast.referral,A friend joined through your invite! +{amount},,,Ein Freund ist über deine Einladung gekommen! +{amount}
+toast.welcome,Welcome! Here is a gift from your friend: +{amount},,,Willkommen! Ein Geschenk von deinem Freund: +{amount}
+toast.unavailable,Coming soon!,,,Kommt bald!
+toast.purchaseThanks,Thank you! {name},,,Danke! {name}
+toast.vipOnly,VIP area! Get the VIP pass in the Store.,,,VIP-Bereich! Den VIP-Pass gibt es im Store.
+board.TopEarned,Top Earners,,,Top-Verdiener
+board.TopRebirths,Most Rebirths,,,Meiste Rebirths
+board.TopSorted,Most Parcels Sorted,,,Meiste Pakete sortiert
+world.collector,Cash Register,,,Kasse
+world.collectorFull,FULL - walk over me!,,,VOLL - lauf über mich!

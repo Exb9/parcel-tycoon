@@ -10,6 +10,7 @@ local Economy = require("../src/shared/Economy")
 
 export type Options = {
 	rebirths: number?,
+	passes: Economy.Passes?,
 	manualSortsPerMinute: number?,
 	savingThresholdMinutes: number?,
 	rebirthWithinMinutes: number?,
@@ -30,7 +31,7 @@ local BalanceSim = {}
 
 type Option = { kind: "track" | "purchase", id: string, cost: number }
 
-local function options(progress: Economy.Progress): { Option }
+local function options(progress: Economy.Progress, passes: Economy.Passes?): { Option }
 	local result: { Option } = {}
 	for _, track in Config.Upgrades.tracks do
 		local cost = Economy.upgradeCost(track.id, Economy.level(progress, track.id))
@@ -39,7 +40,7 @@ local function options(progress: Economy.Progress): { Option }
 		end
 	end
 	for _, purchase in Config.Purchases.purchases do
-		if Economy.isPurchaseAvailable(progress, purchase.id) then
+		if Economy.isPurchaseAvailable(progress, purchase.id, passes) then
 			table.insert(result, { kind = "purchase", id = purchase.id, cost = purchase.cost })
 		end
 	end
@@ -54,18 +55,18 @@ local function apply(progress: Economy.Progress, option: Option, delta: number)
 	end
 end
 
-local function income(progress: Economy.Progress, manual: number): number
-	return Economy.incomePerMinute(progress, manual).totalPerMinute
+local function income(progress: Economy.Progress, manual: number, passes: Economy.Passes?): number
+	return Economy.incomePerMinute(progress, manual, passes).totalPerMinute * Economy.cashMultiplier(passes, false)
 end
 
 -- Best income gain per cash among all options that raise income.
-local function bestOption(progress: Economy.Progress, manual: number): Option?
-	local base = income(progress, manual)
+local function bestOption(progress: Economy.Progress, manual: number, passes: Economy.Passes?): Option?
+	local base = income(progress, manual, passes)
 	local best: Option? = nil
 	local bestScore = 0
-	for _, option in options(progress) do
+	for _, option in options(progress, passes) do
 		apply(progress, option, 1)
-		local gain = income(progress, manual) - base
+		local gain = income(progress, manual, passes) - base
 		apply(progress, option, -1)
 		local score = gain / option.cost
 		if gain > 0 and score > bestScore then
@@ -82,8 +83,10 @@ function BalanceSim.runCycle(opts: Options?): Cycle
 	local rebirthWithin = (o.rebirthWithinMinutes or 15) * 60
 	local maxSeconds = (o.maxMinutes or 180) * 60
 
+	local passes = o.passes
 	local progress = Economy.newProgress()
 	progress.rebirths = o.rebirths or 0
+	progress.zone = Economy.highestUnlockedZone(progress.rebirths)
 	local rebirthCost = Economy.rebirthCost(progress.rebirths)
 
 	local cycle: Cycle = { buys = {}, firstBought = {}, incomeByMinute = {}, rebirthSecond = nil }
@@ -91,7 +94,7 @@ function BalanceSim.runCycle(opts: Options?): Cycle
 	local saving = false
 
 	for second = 1, maxSeconds do
-		local perMinute = income(progress, manual)
+		local perMinute = income(progress, manual, passes)
 		if second % 60 == 1 then
 			table.insert(cycle.incomeByMinute, perMinute)
 		end
@@ -106,14 +109,14 @@ function BalanceSim.runCycle(opts: Options?): Cycle
 		end
 
 		while not saving do
-			local option = bestOption(progress, manual)
+			local option = bestOption(progress, manual, passes)
 			if not option then
 				saving = true
 				break
 			end
 			if cash < option.cost then
 				-- Too far away: a real player would rather save up for the rebirth.
-				saving = (option.cost - cash) / (income(progress, manual) / 60) > threshold
+				saving = (option.cost - cash) / (income(progress, manual, passes) / 60) > threshold
 				break
 			end
 			cash -= option.cost

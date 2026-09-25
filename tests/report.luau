@@ -7,8 +7,17 @@ local function minutes(second: number?): string
 	return if second then string.format("%5.1f min", second / 60) else "      -  "
 end
 
-local milestones =
-	{ "sorter1_letter", "spawner2", "sorter1_box", "sorter1_crate", "spawner3", "belt2", "sorter2_crate", "belt3" }
+local milestones = {
+	"b1_sorter1",
+	"spawner2",
+	"b1_sorter2",
+	"b1_sorter3",
+	"spawner3",
+	"belt2",
+	"b2_sorter3",
+	"belt3",
+	"b3_sorter3",
+}
 
 for rebirths = 0, 2 do
 	local cycle = BalanceSim.runCycle({ rebirths = rebirths })

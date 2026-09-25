@@ -13,11 +13,16 @@ local function deepFreeze<T>(value: T): T
 end
 
 return deepFreeze({
+	Cosmetics = require("@self/Cosmetics"),
 	Economy = require("@self/Economy"),
 	Gameplay = require("@self/Gameplay"),
+	Leaderboards = require("@self/Leaderboards"),
 	Monetization = require("@self/Monetization"),
 	PackageTypes = require("@self/PackageTypes"),
 	Purchases = require("@self/Purchases"),
+	Quests = require("@self/Quests"),
+	Rewards = require("@self/Rewards"),
+	Sounds = require("@self/Sounds"),
 	Upgrades = require("@self/Upgrades"),
 	Zones = require("@self/Zones"),
 })

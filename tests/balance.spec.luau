@@ -17,7 +17,7 @@ Test.test("first purchase within 30 seconds", function()
 end)
 
 Test.test("first sorting machine after 2-6 minutes", function()
-	Test.between(minutesOf(firstRun.firstBought.sorter1_letter), 2, 6)
+	Test.between(minutesOf(firstRun.firstBought.b1_sorter1), 2, 6)
 end)
 
 Test.test("steady purchases early on", function()
@@ -28,15 +28,15 @@ Test.test("steady purchases early on", function()
 end)
 
 Test.test("first belt fully automated after 15-30 minutes", function()
-	Test.between(minutesOf(firstRun.firstBought.sorter1_crate), 15, 30)
+	Test.between(minutesOf(firstRun.firstBought.b1_sorter3), 15, 30)
 end)
 
 Test.test("second belt after 35-55 minutes", function()
 	Test.between(minutesOf(firstRun.firstBought.belt2), 35, 55)
 end)
 
-Test.test("rebirth cycles 1-3 take 45-75 minutes", function()
-	for rebirths = 0, 2 do
+Test.test("rebirth cycles 1-6 take 45-75 minutes (zone 2 from rebirth 3)", function()
+	for rebirths = 0, 5 do
 		local cycle = if rebirths == 0 then firstRun else BalanceSim.runCycle({ rebirths = rebirths })
 		Test.between(minutesOf(cycle.rebirthSecond), 45, 75, `rebirth cycle {rebirths + 1}`)
 	end
